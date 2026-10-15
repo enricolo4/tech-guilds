@@ -14,6 +14,12 @@ from alembic import command
 # Raiz do projeto
 ROOT_DIR = Path(__file__).resolve().parent.parent
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv(ROOT_DIR / ".env")
+except ImportError:
+    pass
+
 SERVICES_CONFIG = [
     ("Registration", ROOT_DIR / "services/registration/secondary/postgresql/migrations/alembic.ini"),
     ("Auth", ROOT_DIR / "services/auth/secondary/postgresql/migrations/alembic.ini"),
@@ -29,7 +35,7 @@ def run_migrations():
 
     db_url = os.getenv(
         "DATABASE_URL",
-        "postgresql+asyncpg://postgres:postgres@localhost:5432/tech_guilds",
+        "postgresql+asyncpg://postgres:postgres@localhost:5433/tech_guilds",
     )
     print(f"📊 Banco de Dados alvo: {db_url}\n")
 

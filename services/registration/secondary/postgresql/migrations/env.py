@@ -18,7 +18,7 @@ target_metadata = Base.metadata
 
 database_url = os.getenv(
     "DATABASE_URL",
-    "postgresql+asyncpg://postgres:postgres@localhost:5432/tech_guilds",
+    "postgresql+asyncpg://postgres:postgres@localhost:5433/tech_guilds",
 )
 config.set_main_option("sqlalchemy.url", database_url)
 

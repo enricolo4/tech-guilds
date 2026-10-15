@@ -14,11 +14,14 @@ echo -e "${CYAN}======================================================${NC}"
 
 # 1. Verifica/sobe infraestrutura Docker (PostgreSQL + NATS JetStream)
 echo -e "\n${YELLOW}[1/4] Subindo infraestrutura Docker (Postgres + NATS JetStream)...${NC}"
-if command -v docker >/dev/null 2>&1; then
+if command -v docker-compose >/dev/null 2>&1; then
+    docker-compose up -d
+    echo -e "${GREEN}✓ Containers ativos com sucesso via docker-compose.${NC}"
+elif docker compose version >/dev/null 2>&1; then
     docker compose up -d
-    echo -e "${GREEN}✓ Containers ativos com sucesso.${NC}"
+    echo -e "${GREEN}✓ Containers ativos com sucesso via docker compose.${NC}"
 else
-    echo -e "${RED}⚠️ Docker não encontrado no PATH. Certifique-se de que o Postgres e o NATS estão rodando localmente.${NC}"
+    echo -e "${RED}⚠️ Docker Compose não encontrado no PATH. Certifique-se de que o Postgres e o NATS estão rodando localmente.${NC}"
 fi
 
 # 2. Aguarda PostgreSQL e NATS estarem prontos
