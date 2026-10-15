@@ -1,18 +1,11 @@
-from dataclasses import dataclass
-from typing import Tuple
 from ..model.hero import Hero, HeroClass
-from ..ports.repositories import HeroRepository
-from ..ports.sso_port import SSOIdentityPort
+from ..ports.primary.auth_port import AuthenticateHeroPort, AuthenticateHeroResult
+from ..ports.secondary.repositories import HeroRepository
+from ..ports.secondary.sso_port import SSOIdentityPort
 
 
-@dataclass
-class AuthenticateHeroResult:
-    hero: Hero
-    is_new_player: bool
-
-
-class AuthenticateHeroUseCase:
-    """Caso de uso de login via SSO corporativo (Google, GitHub, Azure, Microsoft).
+class AuthenticateHeroUseCase(AuthenticateHeroPort):
+    """Implementação da Porta Primária para login via SSO corporativo (Google, GitHub, Azure, Microsoft).
     Se o desenvolvedor estiver entrando pela primeira vez, cria o personagem automaticamente no Nível 1.
     """
     def __init__(self, sso_port: SSOIdentityPort, hero_repo: HeroRepository):

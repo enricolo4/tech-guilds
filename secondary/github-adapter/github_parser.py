@@ -9,9 +9,9 @@ from tech_guilds.domain.model.quest import (
     QuestType,
 )
 from tech_guilds.domain.model.mini_boss import BossSeverity
-from tech_guilds.domain.use_cases.process_card_event import ProcessCardEventCommand
-from tech_guilds.domain.use_cases.process_bug_event import BugEventCommand
-from tech_guilds.domain.use_cases.process_code_review import ProcessCodeReviewCommand
+from tech_guilds.domain.ports.primary.card_event_port import ProcessCardEventCommand
+from tech_guilds.domain.ports.primary.bug_event_port import BugEventCommand
+from tech_guilds.domain.ports.primary.code_review_port import ProcessCodeReviewCommand
 
 
 @dataclass

@@ -3,34 +3,21 @@ from typing import Optional
 from uuid import UUID
 
 from ..model.mini_boss import MiniBoss, BossSeverity
-from ..ports.repositories import (
+from ..ports.primary.bug_event_port import (
+    ProcessBugEventPort,
+    BugEventCommand,
+    BugEventResult,
+)
+from ..ports.secondary.repositories import (
     HeroRepository,
     GuildRepository,
     MiniBossRepository,
 )
-from ..ports.notification_port import NotificationPort
+from ..ports.secondary.notification_port import NotificationPort
 
 
-@dataclass
-class BugEventCommand:
-    external_id: str             # ex: "BUG-109"
-    title: str
-    guild_id: UUID
-    severity: BossSeverity
-    is_resolved: bool
-    resolver_email: Optional[str] = None
-
-
-@dataclass
-class BugEventResult:
-    mini_boss: MiniBoss
-    is_defeated: bool
-    bounty_hero_xp: int = 0
-    bounty_guild_xp: int = 0
-
-
-class ProcessBugEventUseCase:
-    """Caso de uso de geração e combate de Mini-Bosses originados de Bugs e Incidentes."""
+class ProcessBugEventUseCase(ProcessBugEventPort):
+    """Implementação da Porta Primária para geração e combate de Mini-Bosses originados de Bugs e Incidentes."""
     def __init__(
         self,
         boss_repo: MiniBossRepository,

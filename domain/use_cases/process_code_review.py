@@ -1,34 +1,20 @@
-from dataclasses import dataclass
 from typing import Optional
 from uuid import UUID
 
 from ..model.hero import Hero
-from ..ports.repositories import HeroRepository, GuildRepository
-from ..ports.notification_port import NotificationPort
+from ..ports.primary.code_review_port import (
+    ProcessCodeReviewPort,
+    ProcessCodeReviewCommand,
+    ProcessCodeReviewResult,
+    CodeReviewCommand,
+    CodeReviewResult,
+)
+from ..ports.secondary.repositories import HeroRepository, GuildRepository
+from ..ports.secondary.notification_port import NotificationPort
 
 
-@dataclass
-class ProcessCodeReviewCommand:
-    reviewer_email: str
-    guild_id: UUID
-    pr_number: int
-    pr_title: str
-    reviewer_name: Optional[str] = None
-    xp_amount: int = 50
-    gold_amount: int = 15
-
-
-@dataclass
-class ProcessCodeReviewResult:
-    hero: Optional[Hero]
-    xp_awarded: int
-    gold_awarded: int
-    hero_leveled_up: bool = False
-    message: str = ""
-
-
-class ProcessCodeReviewUseCase:
-    """Caso de uso executado quando uma revisão de código (Code Review) é aprovada.
+class ProcessCodeReviewUseCase(ProcessCodeReviewPort):
+    """Implementação da Porta Primária para revisões de código (Bênção do Guardião).
     Concede a 'Bênção do Guardião' e XP de Code Review para o revisor.
     """
     def __init__(

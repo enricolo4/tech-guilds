@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from typing import Optional, Union
 from uuid import UUID
 
@@ -6,33 +5,17 @@ from ..model.hero import Hero, HeroClass
 from ..model.guild import Guild
 from ..model.mini_boss import MiniBoss
 from ..model.skill import Skill, SkillTargetType, get_skill
-from ..ports.repositories import HeroRepository, MiniBossRepository, GuildRepository
-from ..ports.notification_port import NotificationPort
+from ..ports.primary.skill_port import (
+    CastSkillPort,
+    CastSkillCommand,
+    CastSkillResult,
+)
+from ..ports.secondary.repositories import HeroRepository, MiniBossRepository, GuildRepository
+from ..ports.secondary.notification_port import NotificationPort
 
 
-@dataclass
-class CastSkillCommand:
-    hero_id: UUID
-    skill_id: str
-    target_boss_id: Optional[UUID] = None
-    target_guild_id: Optional[UUID] = None
-
-
-@dataclass
-class CastSkillResult:
-    hero: Hero
-    skill: Skill
-    success: bool
-    message: str
-    damage_dealt: int = 0
-    boss_defeated: bool = False
-    exp_multiplier: float = 1.0
-    squad_damage_reduction: float = 0.0
-    squad_exp_buff: int = 0
-
-
-class CastSkillUseCase:
-    """Caso de uso de conjuração de habilidades de classe de RPG.
+class CastSkillUseCase(CastSkillPort):
+    """Implementação da Porta Primária para conjuração de habilidades de classe de RPG.
     Valida classe exigida, disponibilidade de mana e cooldowns,
     aplicando efeitos no Herói, no Mini-Boss ou na Guilda/Squad.
     """

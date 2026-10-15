@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from tech_guilds.domain.model.hero import Hero
-from ..dependencies.container import DependencyContainer, get_container
+from ..dependencies.container import DependencyContainer, get_container, get_auth_port
 from ..dependencies.auth import get_current_hero
+from tech_guilds.domain.ports.primary.auth_port import AuthenticateHeroPort
 from ..schemas.auth_schemas import (
     SSOLoginRequest,
     SSOLoginResponse,
@@ -32,13 +33,13 @@ def _to_hero_response(hero: Hero) -> HeroResponse:
 @router.post("/auth/sso/login", response_model=SSOLoginResponse, status_code=status.HTTP_200_OK)
 async def login_with_sso(
     req: SSOLoginRequest,
-    container: DependencyContainer = Depends(get_container),
+    auth_port: AuthenticateHeroPort = Depends(get_auth_port),
 ):
     """Efetua login via SSO corporativo (Google, GitHub, Azure, Microsoft).
     Auto-provisiona o personagem no Nível 1 caso seja o primeiro acesso do desenvolvedor.
     """
     try:
-        result = await container.auth_use_case.execute(token=req.token, provider=req.provider)
+        result = await auth_port.execute(token=req.token, provider=req.provider)
         hero = result.hero
         return SSOLoginResponse(
             hero=_to_hero_response(hero),

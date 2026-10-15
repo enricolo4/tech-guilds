@@ -5,7 +5,7 @@ from tech_guilds.domain.model.guild import Guild
 from tech_guilds.domain.model.quest import Quest
 from tech_guilds.domain.model.adventure import Adventure
 from tech_guilds.domain.model.mini_boss import MiniBoss
-from tech_guilds.domain.ports.repositories import (
+from tech_guilds.domain.ports.secondary.repositories import (
     HeroRepository,
     GuildRepository,
     QuestRepository,

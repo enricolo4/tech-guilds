@@ -3,39 +3,22 @@ from typing import Optional
 from uuid import UUID
 
 from ..model.quest import Quest, QuestStatus, QuestDifficulty, QuestReward
-from ..ports.repositories import (
+from ..ports.primary.card_event_port import (
+    ProcessCardEventPort,
+    ProcessCardEventCommand,
+    ProcessCardEventResult,
+)
+from ..ports.secondary.repositories import (
     HeroRepository,
     GuildRepository,
     QuestRepository,
     AdventureRepository,
 )
-from ..ports.notification_port import NotificationPort
+from ..ports.secondary.notification_port import NotificationPort
 
 
-@dataclass
-class ProcessCardEventCommand:
-    external_id: str
-    external_source: str
-    title: str
-    assignee_email: str
-    guild_id: UUID
-    new_status: QuestStatus
-    difficulty: QuestDifficulty = QuestDifficulty.MEDIUM
-    is_pair_programming: bool = False
-    adventure_external_id: Optional[str] = None
-
-
-@dataclass
-class ProcessCardEventResult:
-    quest: Quest
-    reward: Optional[QuestReward] = None
-    hero_leveled_up: bool = False
-    guild_leveled_up: bool = False
-    adventure_completed: bool = False
-
-
-class ProcessCardEventUseCase:
-    """Caso de uso executado quando um card de tarefa é criado, movido ou concluído no Linear/Jira/GitHub."""
+class ProcessCardEventUseCase(ProcessCardEventPort):
+    """Implementação da Porta Primária para processamento de eventos de cards (Linear, Jira, GitHub)."""
     def __init__(
         self,
         quest_repo: QuestRepository,

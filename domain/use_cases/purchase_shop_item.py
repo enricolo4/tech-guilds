@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from typing import Optional, Union
 from uuid import UUID
 
@@ -6,30 +5,16 @@ from ..model.hero import Hero
 from ..model.guild import Guild
 from ..model.item import Item, ItemType
 from ..model.shop import ShopItem, ShopCategory, PurchaseTarget, get_shop_item
-from ..ports.repositories import HeroRepository, GuildRepository
+from ..ports.primary.shop_port import (
+    PurchaseShopItemPort,
+    PurchaseShopItemCommand,
+    PurchaseShopItemResult,
+)
+from ..ports.secondary.repositories import HeroRepository, GuildRepository
 
 
-@dataclass
-class PurchaseShopItemCommand:
-    item_id: str
-    hero_id: Optional[UUID] = None
-    guild_id: Optional[UUID] = None
-    use_treasury: bool = False
-    custom_item: Optional[ShopItem] = None
-
-
-@dataclass
-class PurchaseShopItemResult:
-    item: ShopItem
-    hero: Optional[Hero] = None
-    guild: Optional[Guild] = None
-    paid_from_treasury: bool = False
-    gold_spent: int = 0
-    message: str = ""
-
-
-class PurchaseShopItemUseCase:
-    """Caso de uso de compra no Mercado da Guilda.
+class PurchaseShopItemUseCase(PurchaseShopItemPort):
+    """Implementação da Porta Primária para compra no Mercado da Guilda.
     Permite a compra de Equipamentos e Skins pessoais com ouro do Herói,
     ou a aquisição de Perks da Guilda (Coffee Budget, Team Dinner) utilizando o Tesouro da Guilda.
     """

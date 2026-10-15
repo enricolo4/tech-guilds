@@ -1,39 +1,20 @@
-from dataclasses import dataclass
 from typing import Any, Optional, Union
 from uuid import UUID
 
 from ..model.hero import Hero
 from ..model.item import Equipment, EquipmentSlot
-from ..ports.repositories import HeroRepository
+from ..ports.primary.item_port import (
+    EquipItemPort,
+    EquipItemCommand,
+    EquipItemResult,
+    UnequipItemCommand,
+    UnequipItemResult,
+)
+from ..ports.secondary.repositories import HeroRepository
 
 
-@dataclass
-class EquipItemCommand:
-    hero_id: UUID
-    equipment: Equipment
-
-
-@dataclass
-class EquipItemResult:
-    hero: Hero
-    equipped_item: Equipment
-    unequipped_item: Optional[Equipment] = None
-
-
-@dataclass
-class UnequipItemCommand:
-    hero_id: UUID
-    slot: Union[EquipmentSlot, str]
-
-
-@dataclass
-class UnequipItemResult:
-    hero: Hero
-    unequipped_item: Optional[Equipment] = None
-
-
-class EquipItemUseCase:
-    """Caso de uso de gerenciamento de equipamentos de Heróis.
+class EquipItemUseCase(EquipItemPort):
+    """Implementação da Porta Primária para gerenciamento de equipamentos de Heróis.
     Equipa itens de Weapon, Armor, Shield e Charm, atualizando instantaneamente os atributos de RPG.
     """
     def __init__(self, hero_repo: HeroRepository):

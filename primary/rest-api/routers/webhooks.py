@@ -2,10 +2,26 @@ from typing import Any, Dict, Optional
 from uuid import UUID
 from fastapi import APIRouter, Body, Depends, Header, Query, status
 
-from ..dependencies.container import DependencyContainer, get_container
+from ..dependencies.container import (
+    DependencyContainer,
+    get_container,
+    get_card_event_port,
+    get_bug_event_port,
+    get_code_review_port,
+)
 from tech_guilds.domain.model.guild import Guild
-from tech_guilds.domain.use_cases.process_card_event import ProcessCardEventCommand
-from tech_guilds.domain.use_cases.process_bug_event import BugEventCommand
+from tech_guilds.domain.ports.primary.card_event_port import (
+    ProcessCardEventPort,
+    ProcessCardEventCommand,
+)
+from tech_guilds.domain.ports.primary.bug_event_port import (
+    ProcessBugEventPort,
+    BugEventCommand,
+)
+from tech_guilds.domain.ports.primary.code_review_port import (
+    ProcessCodeReviewPort,
+    ProcessCodeReviewCommand,
+)
 from tech_guilds.secondary.linear_adapter.linear_parser import LinearWebhookParser
 from tech_guilds.secondary.github_adapter.github_parser import GitHubWebhookParser
 from ..schemas.webhook_schemas import (
@@ -33,7 +49,7 @@ async def _resolve_guild_id(container: DependencyContainer, guild_id: Optional[U
 @router.post("/cards", response_model=WebhookEventResponse, status_code=status.HTTP_200_OK)
 async def handle_card_event(
     req: WebhookCardEventRequest,
-    container: DependencyContainer = Depends(get_container),
+    card_event_port: ProcessCardEventPort = Depends(get_card_event_port),
 ):
     """Recebe eventos genéricos de cartões de tarefas vindos do Linear, Jira ou GitHub Issues.
     Se a tarefa for finalizada, calcula e distribui XP individual e coletivo para o Squad.
@@ -49,7 +65,7 @@ async def handle_card_event(
         is_pair_programming=req.is_pair_programming,
         adventure_external_id=req.adventure_external_id,
     )
-    result = await container.process_card_use_case.execute(cmd)
+    result = await card_event_port.execute(cmd)
 
     msg = f"Card [{req.external_id}] processado com status {req.new_status}."
     if result.reward:
@@ -71,7 +87,7 @@ async def handle_card_event(
 @router.post("/bugs", response_model=WebhookEventResponse, status_code=status.HTTP_200_OK)
 async def handle_bug_event(
     req: WebhookBugEventRequest,
-    container: DependencyContainer = Depends(get_container),
+    bug_event_port: ProcessBugEventPort = Depends(get_bug_event_port),
 ):
     """Recebe eventos genéricos de bugs e incidentes.
     Cria Mini-Bosses que atacam o Squad até serem resolvidos.
@@ -84,7 +100,7 @@ async def handle_bug_event(
         is_resolved=req.is_resolved,
         resolver_email=req.resolver_email,
     )
-    result = await container.process_bug_use_case.execute(cmd)
+    result = await bug_event_port.execute(cmd)
 
     if result.is_defeated:
         msg = f"Mini-Boss [{req.external_id}] derrotado! +{result.bounty_hero_xp} XP ao herói e +{result.bounty_guild_xp} XP à Guilda!"
@@ -104,6 +120,8 @@ async def handle_bug_event(
 async def handle_linear_webhook(
     payload: Dict[str, Any] = Body(...),
     guild_id: Optional[UUID] = Query(None),
+    card_event_port: ProcessCardEventPort = Depends(get_card_event_port),
+    bug_event_port: ProcessBugEventPort = Depends(get_bug_event_port),
     container: DependencyContainer = Depends(get_container),
 ):
     """Webhook nativo do Linear.
@@ -123,7 +141,7 @@ async def handle_linear_webhook(
 
     if event.is_bug:
         cmd = LinearWebhookParser.to_bug_command(event, effective_guild_id)
-        result = await container.process_bug_use_case.execute(cmd)
+        result = await bug_event_port.execute(cmd)
 
         if result.is_defeated:
             msg = f"Mini-Boss [{event.identifier}] derrotado via Linear! +{result.bounty_hero_xp} XP ao herói e +{result.bounty_guild_xp} XP à Guilda!"
@@ -140,7 +158,7 @@ async def handle_linear_webhook(
 
     # Processa como Quest regular
     cmd_card = LinearWebhookParser.to_card_command(event, effective_guild_id)
-    result_card = await container.process_card_use_case.execute(cmd_card)
+    result_card = await card_event_port.execute(cmd_card)
 
     msg = f"Card Linear [{event.identifier}] atualizado para status '{event.status.value}'."
     if result_card.reward:
@@ -164,6 +182,9 @@ async def handle_github_webhook(
     payload: Dict[str, Any] = Body(...),
     x_github_event: Optional[str] = Header(None, alias="X-GitHub-Event"),
     guild_id: Optional[UUID] = Query(None),
+    card_event_port: ProcessCardEventPort = Depends(get_card_event_port),
+    bug_event_port: ProcessBugEventPort = Depends(get_bug_event_port),
+    code_review_port: ProcessCodeReviewPort = Depends(get_code_review_port),
     container: DependencyContainer = Depends(get_container),
 ):
     """Webhook nativo do GitHub.
@@ -176,7 +197,7 @@ async def handle_github_webhook(
     # 1. Eventos de Pull Request
     if event.event_type == "pull_request":
         cmd_card = GitHubWebhookParser.to_card_command(event, effective_guild_id)
-        result_card = await container.process_card_use_case.execute(cmd_card)
+        result_card = await card_event_port.execute(cmd_card)
 
         msg = f"GitHub PR [{event.identifier}] processado com status '{event.status.value}'."
         if result_card.reward:
@@ -196,7 +217,7 @@ async def handle_github_webhook(
     if event.event_type == "pull_request_review":
         if event.is_review_approved:
             cmd_review = GitHubWebhookParser.to_code_review_command(event, effective_guild_id)
-            result_review = await container.process_code_review_use_case.execute(cmd_review)
+            result_review = await code_review_port.execute(cmd_review)
 
             msg = (
                 f"🛡️ Bênção do Guardião concedida a {result_review.hero.name if result_review.hero else 'Revisor'}! "
@@ -223,7 +244,7 @@ async def handle_github_webhook(
     if event.event_type == "issues":
         if event.is_bug:
             cmd_bug = GitHubWebhookParser.to_bug_command(event, effective_guild_id)
-            result_bug = await container.process_bug_use_case.execute(cmd_bug)
+            result_bug = await bug_event_port.execute(cmd_bug)
 
             if result_bug.is_defeated:
                 msg = f"Mini-Boss [{event.identifier}] derrotado via GitHub Issue! +{result_bug.bounty_hero_xp} XP ao herói e +{result_bug.bounty_guild_xp} XP à Guilda!"
@@ -240,7 +261,7 @@ async def handle_github_webhook(
 
         # Issue comum tratada como Quest
         cmd_card = GitHubWebhookParser.to_card_command(event, effective_guild_id)
-        result_card = await container.process_card_use_case.execute(cmd_card)
+        result_card = await card_event_port.execute(cmd_card)
         msg = f"GitHub Issue [{event.identifier}] processada com status '{event.status.value}'."
         if result_card.reward:
             msg += f" Recompensa: +{result_card.reward.hero_xp} XP herói, +{result_card.reward.guild_xp} XP guilda."

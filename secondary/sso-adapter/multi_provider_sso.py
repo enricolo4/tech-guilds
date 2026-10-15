@@ -1,7 +1,7 @@
 import httpx
 from typing import Optional
 from tech_guilds.domain.model.user_claims import UserClaims
-from tech_guilds.domain.ports.sso_port import SSOIdentityPort
+from tech_guilds.domain.ports.secondary.sso_port import SSOIdentityPort
 
 
 class MultiProviderSSOAdapter(SSOIdentityPort):

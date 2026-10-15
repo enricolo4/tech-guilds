@@ -3,7 +3,7 @@ import logging
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 import httpx
-from tech_guilds.domain.ports.notification_port import NotificationPort
+from tech_guilds.domain.ports.secondary.notification_port import NotificationPort
 
 logger = logging.getLogger(__name__)
 
