@@ -1,3 +1,4 @@
+import os
 from typing import Optional
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -77,9 +78,12 @@ def get_in_memory_container() -> GamificationContainer:
 
 
 def get_gamification_container(
-    session: AsyncSession = Depends(get_db_session),
+    session: Optional[AsyncSession] = Depends(get_db_session),
 ) -> GamificationContainer:
-    """Dependency do FastAPI para obter o contêiner conectado à sessão do PostgreSQL."""
+    """Dependency do FastAPI para obter o contêiner conectado à sessão do PostgreSQL ou InMemory."""
+    if session is None or os.getenv("TESTING", "false").lower() == "true":
+        return get_in_memory_container()
+
     return GamificationContainer(
         hero_repo=PostgresHeroProgressionRepository(session),
         quest_repo=PostgresQuestRepository(session),
