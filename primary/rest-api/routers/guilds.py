@@ -1,7 +1,7 @@
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
-from tech_guilds.domain.entities.guild import Guild
-from tech_guilds.domain.entities.hero import Hero
+from tech_guilds.domain.model.guild import Guild
+from tech_guilds.domain.model.hero import Hero
 from ..dependencies.container import DependencyContainer, get_container
 from ..dependencies.auth import get_current_hero
 from ..schemas.guild_schemas import CreateGuildRequest, GuildDetailsResponse

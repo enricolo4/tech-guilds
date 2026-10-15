@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Tuple
-from ..entities.hero import Hero, HeroClass
+from ..model.hero import Hero, HeroClass
 from ..ports.repositories import HeroRepository
 from ..ports.sso_port import SSOIdentityPort
 

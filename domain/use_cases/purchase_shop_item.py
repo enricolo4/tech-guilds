@@ -2,10 +2,10 @@ from dataclasses import dataclass
 from typing import Optional, Union
 from uuid import UUID
 
-from ..entities.hero import Hero
-from ..entities.guild import Guild
-from ..entities.item import Item, ItemType
-from ..entities.shop import ShopItem, ShopCategory, PurchaseTarget, get_shop_item
+from ..model.hero import Hero
+from ..model.guild import Guild
+from ..model.item import Item, ItemType
+from ..model.shop import ShopItem, ShopCategory, PurchaseTarget, get_shop_item
 from ..ports.repositories import HeroRepository, GuildRepository
 
 

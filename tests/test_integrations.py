@@ -4,10 +4,10 @@ from fastapi.testclient import TestClient
 
 from tech_guilds.primary.rest_api.main import app
 from tech_guilds.primary.rest_api.dependencies.container import DependencyContainer
-from tech_guilds.domain.entities.hero import Hero, HeroClass
-from tech_guilds.domain.entities.guild import Guild
-from tech_guilds.domain.entities.quest import QuestStatus, QuestDifficulty
-from tech_guilds.domain.entities.mini_boss import BossSeverity
+from tech_guilds.domain.model.hero import Hero, HeroClass
+from tech_guilds.domain.model.guild import Guild
+from tech_guilds.domain.model.quest import QuestStatus, QuestDifficulty
+from tech_guilds.domain.model.mini_boss import BossSeverity
 from tech_guilds.secondary.linear_adapter.linear_parser import LinearWebhookParser
 from tech_guilds.secondary.linear_adapter.linear_client import LinearClient
 from tech_guilds.secondary.github_adapter.github_parser import GitHubWebhookParser

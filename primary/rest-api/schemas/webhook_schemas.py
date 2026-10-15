@@ -1,8 +1,8 @@
 from typing import Optional
 from uuid import UUID
 from pydantic import BaseModel
-from tech_guilds.domain.entities.quest import QuestStatus, QuestDifficulty
-from tech_guilds.domain.entities.mini_boss import BossSeverity
+from tech_guilds.domain.model.quest import QuestStatus, QuestDifficulty
+from tech_guilds.domain.model.mini_boss import BossSeverity
 
 
 class WebhookCardEventRequest(BaseModel):

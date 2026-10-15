@@ -2,8 +2,8 @@ from dataclasses import dataclass
 from typing import Any, Optional, Union
 from uuid import UUID
 
-from ..entities.hero import Hero
-from ..entities.item import Equipment, EquipmentSlot
+from ..model.hero import Hero
+from ..model.item import Equipment, EquipmentSlot
 from ..ports.repositories import HeroRepository
 
 

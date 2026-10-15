@@ -1,6 +1,6 @@
 import httpx
 from typing import Optional
-from tech_guilds.domain.entities.user_claims import UserClaims
+from tech_guilds.domain.model.user_claims import UserClaims
 from tech_guilds.domain.ports.sso_port import SSOIdentityPort
 
 

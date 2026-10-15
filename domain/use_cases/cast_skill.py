@@ -2,10 +2,10 @@ from dataclasses import dataclass
 from typing import Optional, Union
 from uuid import UUID
 
-from ..entities.hero import Hero, HeroClass
-from ..entities.guild import Guild
-from ..entities.mini_boss import MiniBoss
-from ..entities.skill import Skill, SkillTargetType, get_skill
+from ..model.hero import Hero, HeroClass
+from ..model.guild import Guild
+from ..model.mini_boss import MiniBoss
+from ..model.skill import Skill, SkillTargetType, get_skill
 from ..ports.repositories import HeroRepository, MiniBossRepository, GuildRepository
 from ..ports.notification_port import NotificationPort
 

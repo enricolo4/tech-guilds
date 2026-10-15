@@ -4,8 +4,8 @@ from typing import Dict, Any, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse
 
-from tech_guilds.domain.entities.guild import Guild
-from tech_guilds.domain.entities.hero import HeroClass
+from tech_guilds.domain.model.guild import Guild
+from tech_guilds.domain.model.hero import HeroClass
 from ..dependencies.container import DependencyContainer, get_container
 
 router = APIRouter(prefix="/dashboard", tags=["RPG Dashboard"])

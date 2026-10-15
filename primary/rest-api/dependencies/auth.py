@@ -1,6 +1,6 @@
 from fastapi import Depends, HTTPException, Security, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from tech_guilds.domain.entities.hero import Hero
+from tech_guilds.domain.model.hero import Hero
 from .container import DependencyContainer, get_container
 
 security = HTTPBearer()

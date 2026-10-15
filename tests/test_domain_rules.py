@@ -1,10 +1,10 @@
 import unittest
-from tech_guilds.domain.entities.hero import Hero, HeroClass
-from tech_guilds.domain.entities.guild import Guild
-from tech_guilds.domain.entities.quest import Quest, QuestStatus, QuestDifficulty
-from tech_guilds.domain.entities.adventure import Adventure
-from tech_guilds.domain.entities.mini_boss import MiniBoss, BossSeverity
-from tech_guilds.domain.entities.user_claims import UserClaims
+from tech_guilds.domain.model.hero import Hero, HeroClass
+from tech_guilds.domain.model.guild import Guild
+from tech_guilds.domain.model.quest import Quest, QuestStatus, QuestDifficulty
+from tech_guilds.domain.model.adventure import Adventure
+from tech_guilds.domain.model.mini_boss import MiniBoss, BossSeverity
+from tech_guilds.domain.model.user_claims import UserClaims
 from tech_guilds.domain.use_cases.authenticate_hero import AuthenticateHeroUseCase
 from tech_guilds.domain.use_cases.process_card_event import ProcessCardEventUseCase, ProcessCardEventCommand
 from tech_guilds.domain.use_cases.process_bug_event import ProcessBugEventUseCase, BugEventCommand

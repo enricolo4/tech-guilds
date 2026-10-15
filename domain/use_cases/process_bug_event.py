@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Optional
 from uuid import UUID
 
-from ..entities.mini_boss import MiniBoss, BossSeverity
+from ..model.mini_boss import MiniBoss, BossSeverity
 from ..ports.repositories import (
     HeroRepository,
     GuildRepository,

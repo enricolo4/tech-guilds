@@ -3,12 +3,12 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from tech_guilds.domain.entities.quest import (
+from tech_guilds.domain.model.quest import (
     QuestDifficulty,
     QuestStatus,
     QuestType,
 )
-from tech_guilds.domain.entities.mini_boss import BossSeverity
+from tech_guilds.domain.model.mini_boss import BossSeverity
 from tech_guilds.domain.use_cases.process_card_event import ProcessCardEventCommand
 from tech_guilds.domain.use_cases.process_bug_event import BugEventCommand
 from tech_guilds.domain.use_cases.process_code_review import ProcessCodeReviewCommand

@@ -10,11 +10,11 @@ from tech_guilds.secondary.postgresql.repositories.postgres_repositories import 
     PostgresAdventureRepository,
     PostgresMiniBossRepository,
 )
-from tech_guilds.domain.entities.hero import Hero, HeroClass
-from tech_guilds.domain.entities.guild import Guild
-from tech_guilds.domain.entities.quest import Quest, QuestDifficulty, QuestStatus
-from tech_guilds.domain.entities.adventure import Adventure
-from tech_guilds.domain.entities.mini_boss import MiniBoss, BossSeverity
+from tech_guilds.domain.model.hero import Hero, HeroClass
+from tech_guilds.domain.model.guild import Guild
+from tech_guilds.domain.model.quest import Quest, QuestDifficulty, QuestStatus
+from tech_guilds.domain.model.adventure import Adventure
+from tech_guilds.domain.model.mini_boss import MiniBoss, BossSeverity
 
 
 class TestPostgresRepositoriesIntegration(unittest.IsolatedAsyncioTestCase):

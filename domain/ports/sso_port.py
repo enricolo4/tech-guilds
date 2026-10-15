@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from ..entities.user_claims import UserClaims
+from ..model.user_claims import UserClaims
 
 
 class SSOIdentityPort(ABC):

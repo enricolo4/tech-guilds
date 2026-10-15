@@ -3,7 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Body, Depends, Header, Query, status
 
 from ..dependencies.container import DependencyContainer, get_container
-from tech_guilds.domain.entities.guild import Guild
+from tech_guilds.domain.model.guild import Guild
 from tech_guilds.domain.use_cases.process_card_event import ProcessCardEventCommand
 from tech_guilds.domain.use_cases.process_bug_event import BugEventCommand
 from tech_guilds.secondary.linear_adapter.linear_parser import LinearWebhookParser

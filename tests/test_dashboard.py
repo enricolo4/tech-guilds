@@ -4,11 +4,11 @@ from fastapi.testclient import TestClient
 
 from tech_guilds.primary.rest_api.main import app
 from tech_guilds.primary.rest_api.dependencies.container import get_container
-from tech_guilds.domain.entities.guild import Guild
-from tech_guilds.domain.entities.hero import Hero, HeroClass, HeroStats
-from tech_guilds.domain.entities.quest import Quest, QuestStatus, QuestDifficulty, QuestType
-from tech_guilds.domain.entities.adventure import Adventure
-from tech_guilds.domain.entities.mini_boss import MiniBoss, BossSeverity
+from tech_guilds.domain.model.guild import Guild
+from tech_guilds.domain.model.hero import Hero, HeroClass, HeroStats
+from tech_guilds.domain.model.quest import Quest, QuestStatus, QuestDifficulty, QuestType
+from tech_guilds.domain.model.adventure import Adventure
+from tech_guilds.domain.model.mini_boss import MiniBoss, BossSeverity
 
 
 class TestDashboardAndUI(unittest.IsolatedAsyncioTestCase):

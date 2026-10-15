@@ -2,11 +2,11 @@ from abc import ABC, abstractmethod
 from typing import List, Optional
 from uuid import UUID
 
-from ..entities.hero import Hero
-from ..entities.guild import Guild
-from ..entities.quest import Quest
-from ..entities.adventure import Adventure
-from ..entities.mini_boss import MiniBoss
+from ..model.hero import Hero
+from ..model.guild import Guild
+from ..model.quest import Quest
+from ..model.adventure import Adventure
+from ..model.mini_boss import MiniBoss
 
 
 class HeroRepository(ABC):

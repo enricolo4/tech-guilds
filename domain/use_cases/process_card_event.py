@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Optional
 from uuid import UUID
 
-from ..entities.quest import Quest, QuestStatus, QuestDifficulty, QuestReward
+from ..model.quest import Quest, QuestStatus, QuestDifficulty, QuestReward
 from ..ports.repositories import (
     HeroRepository,
     GuildRepository,

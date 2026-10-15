@@ -1,10 +1,10 @@
 from typing import Dict, List, Optional
 from uuid import UUID
-from tech_guilds.domain.entities.hero import Hero
-from tech_guilds.domain.entities.guild import Guild
-from tech_guilds.domain.entities.quest import Quest
-from tech_guilds.domain.entities.adventure import Adventure
-from tech_guilds.domain.entities.mini_boss import MiniBoss
+from tech_guilds.domain.model.hero import Hero
+from tech_guilds.domain.model.guild import Guild
+from tech_guilds.domain.model.quest import Quest
+from tech_guilds.domain.model.adventure import Adventure
+from tech_guilds.domain.model.mini_boss import MiniBoss
 from tech_guilds.domain.ports.repositories import (
     HeroRepository,
     GuildRepository,

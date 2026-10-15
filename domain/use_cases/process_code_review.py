@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Optional
 from uuid import UUID
 
-from ..entities.hero import Hero
+from ..model.hero import Hero
 from ..ports.repositories import HeroRepository, GuildRepository
 from ..ports.notification_port import NotificationPort
 

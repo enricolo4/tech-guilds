@@ -2,10 +2,10 @@ import unittest
 from uuid import uuid4
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 
-from tech_guilds.domain.entities.hero import Hero, HeroClass, HeroStats
-from tech_guilds.domain.entities.guild import Guild
-from tech_guilds.domain.entities.mini_boss import MiniBoss, BossSeverity
-from tech_guilds.domain.entities.item import (
+from tech_guilds.domain.model.hero import Hero, HeroClass, HeroStats
+from tech_guilds.domain.model.guild import Guild
+from tech_guilds.domain.model.mini_boss import MiniBoss, BossSeverity
+from tech_guilds.domain.model.item import (
     Item,
     ItemType,
     Equipment,
@@ -15,7 +15,7 @@ from tech_guilds.domain.entities.item import (
     create_shield,
     create_charm,
 )
-from tech_guilds.domain.entities.skill import (
+from tech_guilds.domain.model.skill import (
     Skill,
     BRUTAL_REFACTOR,
     SCRIPT_AUTOMATION,
@@ -23,7 +23,7 @@ from tech_guilds.domain.entities.skill import (
     EDGE_CASE_STRIKE,
     SPRINT_RALLY,
 )
-from tech_guilds.domain.entities.shop import (
+from tech_guilds.domain.model.shop import (
     ShopItem,
     ShopCategory,
     PurchaseTarget,

@@ -11,7 +11,7 @@ O projeto segue rigorosamente o padrão estabelecido em [`ARCHITECTURE_SKILL.md`
 ```text
 tech-guilds/
 ├── domain/                                  # 100% puro, sem frameworks externos
-│   ├── entities/
+│   ├── model/
 │   │   ├── hero.py                          # Desenvolvedor (Classe, Stats, Nível, EXP, HP)
 │   │   ├── guild.py                         # Squad de Engenharia (Nível, Baú de Ouro, Membros)
 │   │   ├── quest.py                         # Cards de Tarefas (Feature, Débito, Chores)

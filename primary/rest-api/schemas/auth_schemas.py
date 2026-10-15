@@ -1,7 +1,7 @@
 from typing import Optional
 from uuid import UUID
 from pydantic import BaseModel
-from tech_guilds.domain.entities.hero import HeroClass
+from tech_guilds.domain.model.hero import HeroClass
 
 
 class SSOLoginRequest(BaseModel):
