@@ -1,0 +1,210 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
+
+/* O2 INC. Palette & Retro Arcade Colors */
+:root {
+  --o2-vivid-green: #6BF169;
+  --o2-intense-gray: #494949;
+  --retro-dark: #0b0e14;
+  --retro-card-bg: #121824;
+  --retro-card-border: #232d3f;
+  --retro-cyan: #00e5ff;
+  --retro-gold: #ffbe33;
+  --retro-red: #ff3864;
+  --retro-blue: #3a86ff;
+  --retro-purple: #9d4edd;
+}
+
+/* Pixel Typography */
+.font-pixel {
+  font-family: 'Press Start 2P', monospace;
+}
+
+.font-terminal {
+  font-family: 'VT323', monospace;
+}
+
+/* CRT Scanline Overlay */
+.scanlines {
+  position: relative;
+}
+.scanlines::before {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+  background-size: 100% 4px;
+  z-index: 40;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+/* Pixel Borders & Shadows */
+.pixel-box {
+  background-color: var(--retro-card-bg);
+  border: 2px solid var(--retro-card-border);
+  box-shadow: 0 0 0 1px #000, 4px 4px 0px 0px rgba(0, 0, 0, 0.7);
+  image-rendering: pixelated;
+}
+
+.pixel-box-green {
+  border-color: var(--o2-vivid-green);
+  box-shadow: 0 0 12px rgba(107, 241, 105, 0.35), 3px 3px 0px #000;
+}
+
+.pixel-box-red {
+  border-color: var(--retro-red);
+  box-shadow: 0 0 12px rgba(255, 56, 100, 0.4), 3px 3px 0px #000;
+}
+
+.pixel-box-cyan {
+  border-color: var(--retro-cyan);
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.35), 3px 3px 0px #000;
+}
+
+.pixel-box-gold {
+  border-color: var(--retro-gold);
+  box-shadow: 0 0 12px rgba(255, 190, 51, 0.35), 3px 3px 0px #000;
+}
+
+/* Pixel Buttons */
+.pixel-btn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  padding: 8px 14px;
+  position: relative;
+  border: 2px solid #000;
+  box-shadow: inset -2px -2px 0px 0px rgba(0,0,0,0.5), 3px 3px 0px #000;
+  transition: all 0.08s ease;
+  cursor: pointer;
+  user-select: none;
+}
+.pixel-btn:hover {
+  filter: brightness(1.15);
+  transform: translate(-1px, -1px);
+  box-shadow: inset -2px -2px 0px 0px rgba(0,0,0,0.5), 4px 4px 0px #000;
+}
+.pixel-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: inset 2px 2px 0px 0px rgba(0,0,0,0.5), 1px 1px 0px #000;
+}
+
+.pixel-btn-green {
+  background-color: var(--o2-vivid-green);
+  color: #0b0e14;
+}
+
+.pixel-btn-red {
+  background-color: var(--retro-red);
+  color: #ffffff;
+}
+
+.pixel-btn-cyan {
+  background-color: var(--retro-cyan);
+  color: #0b0e14;
+}
+
+.pixel-btn-gold {
+  background-color: var(--retro-gold);
+  color: #0b0e14;
+}
+
+.pixel-btn-dark {
+  background-color: #232d3f;
+  color: #e2e8f0;
+  border-color: #3b4252;
+}
+
+/* Striped Animated Bars */
+.bar-striped {
+  background-image: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.15) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.15) 50%,
+    rgba(255, 255, 255, 0.15) 75%,
+    transparent 75%,
+    transparent
+  );
+  background-size: 16px 16px;
+  animation: move-stripes 2s linear infinite;
+}
+
+@keyframes move-stripes {
+  0% { background-position: 0 0; }
+  100% { background-position: 32px 0; }
+}
+
+/* Boss Damage Shake Effect */
+@keyframes shake-boss {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  10% { transform: translate(-6px, -4px) rotate(-2deg); filter: brightness(1.8) hue-rotate(90deg); }
+  20% { transform: translate(6px, 4px) rotate(2deg); }
+  30% { transform: translate(-8px, 2px) rotate(-1deg); }
+  40% { transform: translate(7px, -4px) rotate(1deg); }
+  50% { transform: translate(-5px, 3px) rotate(-1deg); filter: brightness(1.5); }
+  60% { transform: translate(6px, 1px) rotate(1deg); }
+  70% { transform: translate(-4px, -2px) rotate(0deg); }
+  80% { transform: translate(3px, 2px) rotate(0deg); }
+  90% { transform: translate(-1px, -1px) rotate(0deg); }
+}
+
+.shake-effect {
+  animation: shake-boss 0.45s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+/* Floating Damage Popup */
+@keyframes float-damage {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-28px) scale(1.3);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-50px) scale(0.9);
+  }
+}
+
+.floating-dmg {
+  animation: float-damage 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+/* Floating Sprite Idle Animation */
+@keyframes float-idle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.sprite-idle {
+  animation: float-idle 2.5s ease-in-out infinite;
+}
+
+/* Glowing Pulsing Badge */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 8px rgba(107, 241, 105, 0.4); }
+  50% { box-shadow: 0 0 18px rgba(107, 241, 105, 0.85); }
+}
+
+.glow-pulse-green {
+  animation: pulse-glow 2s infinite ease-in-out;
+}
+
+/* Terminal & Combat Log Styling */
+.retro-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.retro-scrollbar::-webkit-scrollbar-track {
+  background: #0b0e14;
+}
+.retro-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--o2-vivid-green);
+  border-radius: 0px;
+}
