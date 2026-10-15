@@ -934,6 +934,23 @@ files = [
 ]
 
 [[package]]
+name = "nats-py"
+version = "2.16.0"
+description = "NATS client for Python"
+optional = false
+python-versions = ">=3.7"
+groups = ["main"]
+files = [
+    {file = "nats_py-2.16.0-py3-none-any.whl", hash = "sha256:aeb1ff123966c05833d26c7df7e1d54c1c6d32b612428b21677a2e921f1fecae"},
+    {file = "nats_py-2.16.0.tar.gz", hash = "sha256:1d137ed7afc9b59033b3199324c6237df2016a5091935871344a787eba6b72fc"},
+]
+
+[package.extras]
+aiohttp = ["aiohttp"]
+fast-parse = ["fast-mail-parser"]
+nkeys = ["nkeys"]
+
+[[package]]
 name = "opentelemetry-api"
 version = "1.45.1"
 description = "OpenTelemetry Python API"
@@ -1872,4 +1889,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<4.0"
-content-hash = "d640ba76d81bcf6eb98036bbf698c3c7171fde3c055a5dc4168445021170e6bb"
+content-hash = "f0ea817668c22b7cf0338daa71fcedb91011fdd52118d76e433952fec67dc6a5"

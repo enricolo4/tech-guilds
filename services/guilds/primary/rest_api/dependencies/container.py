@@ -1,0 +1,96 @@
+from typing import Optional
+
+from services.guilds.domain.ports.primary.guild_ports import (
+    AddMemberPort,
+    CreateGuildPort,
+    SyncHeroMemberPort,
+)
+from services.guilds.domain.ports.secondary.guild_member_repository import GuildMemberRepository
+from services.guilds.domain.ports.secondary.guild_repository import GuildRepository
+from services.guilds.domain.use_cases.add_member import AddMemberUseCase
+from services.guilds.domain.use_cases.create_guild import CreateGuildUseCase
+from services.guilds.domain.use_cases.sync_hero_member import SyncHeroMemberUseCase
+from services.guilds.secondary.postgresql.repositories.postgres_guild_repository import (
+    InMemoryGuildMemberRepository,
+    InMemoryGuildRepository,
+)
+
+
+class DependencyContainer:
+    """Container de Injeção de Dependências do microsserviço de Guilds."""
+
+    _instance: Optional["DependencyContainer"] = None
+
+    def __init__(
+        self,
+        guild_repository: Optional[GuildRepository] = None,
+        member_repository: Optional[GuildMemberRepository] = None,
+    ):
+        self._guild_repository = guild_repository or InMemoryGuildRepository()
+        self._member_repository = member_repository or InMemoryGuildMemberRepository()
+
+        self._create_guild_port: CreateGuildPort = CreateGuildUseCase(
+            guild_repository=self._guild_repository,
+            member_repository=self._member_repository,
+        )
+        self._add_member_port: AddMemberPort = AddMemberUseCase(
+            guild_repository=self._guild_repository,
+            member_repository=self._member_repository,
+        )
+        self._sync_hero_member_port: SyncHeroMemberPort = SyncHeroMemberUseCase(
+            member_repository=self._member_repository,
+        )
+
+    @classmethod
+    def get_instance(cls) -> "DependencyContainer":
+        if cls._instance is None:
+            cls._instance = DependencyContainer()
+        return cls._instance
+
+    @classmethod
+    def reset(cls, container: Optional["DependencyContainer"] = None) -> None:
+        cls._instance = container
+
+    @property
+    def guild_repository(self) -> GuildRepository:
+        return self._guild_repository
+
+    @property
+    def member_repository(self) -> GuildMemberRepository:
+        return self._member_repository
+
+    @property
+    def create_guild_port(self) -> CreateGuildPort:
+        return self._create_guild_port
+
+    @property
+    def add_member_port(self) -> AddMemberPort:
+        return self._add_member_port
+
+    @property
+    def sync_hero_member_port(self) -> SyncHeroMemberPort:
+        return self._sync_hero_member_port
+
+
+def get_container() -> DependencyContainer:
+    return DependencyContainer.get_instance()
+
+
+def get_create_guild_port() -> CreateGuildPort:
+    return get_container().create_guild_port
+
+
+def get_add_member_port() -> AddMemberPort:
+    return get_container().add_member_port
+
+
+def get_sync_hero_member_port() -> SyncHeroMemberPort:
+    return get_container().sync_hero_member_port
+
+
+def get_guild_repository() -> GuildRepository:
+    return get_container().guild_repository
+
+
+def get_guild_member_repository() -> GuildMemberRepository:
+    return get_container().member_repository
