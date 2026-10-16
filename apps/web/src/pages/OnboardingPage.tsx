@@ -16,7 +16,9 @@ import {
   LogIn,
   LogOut,
   KeyRound,
+  Palette,
 } from 'lucide-react';
+import { AvatarPickerModal, AVATAR_PRESETS } from '../components/AvatarPickerModal';
 
 interface ClassOption {
   id: HeroClass;
@@ -112,7 +114,11 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
   // Herói
   const [heroName, setHeroName] = useState('');
   const [heroEmail, setHeroEmail] = useState('');
-  const [avatarSeed, setAvatarSeed] = useState('HeroDev');
+  const [avatarUrl, setAvatarUrl] = useState<string>(
+    'https://api.dicebear.com/7.x/pixel-art/svg?seed=Gandalf'
+  );
+  const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
+  const [hasManuallySelectedAvatar, setHasManuallySelectedAvatar] = useState(false);
   const [selectedClass, setSelectedClass] = useState<HeroClass>('WARRIOR');
   const [existingHeroId, setExistingHeroId] = useState<string | null>(null);
 
@@ -131,7 +137,6 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
   const [registeredHeroId, setRegisteredHeroId] = useState<string | null>(null);
   const [finalGuildId, setFinalGuildId] = useState<string | null>(null);
 
-  const avatarUrl = `https://api.dicebear.com/7.x/pixel-art/svg?seed=${encodeURIComponent(avatarSeed)}`;
   const currentClassDetails =
     AVAILABLE_CLASSES.find((c) => c.id === selectedClass) || AVAILABLE_CLASSES[0];
 
@@ -162,7 +167,12 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
         setHeroName(parsed.user.name);
         setHeroEmail(parsed.user.email);
         setSsoProvider((parsed.user.provider as any) || 'direct');
-        if (parsed.user.name) setAvatarSeed(parsed.user.name);
+        if (parsed.user.avatar_url) {
+          setAvatarUrl(parsed.user.avatar_url);
+          setHasManuallySelectedAvatar(true);
+        } else if (parsed.user.name) {
+          setAvatarUrl(`https://api.dicebear.com/7.x/pixel-art/svg?seed=${encodeURIComponent(parsed.user.name)}`);
+        }
 
         // Checa se já tem herói cadastrado
         api
@@ -171,6 +181,10 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
             if (hero) {
               setExistingHeroId(hero.id);
               if (hero.hero_class) setSelectedClass(hero.hero_class as HeroClass);
+              if (hero.avatar_url) {
+                setAvatarUrl(hero.avatar_url);
+                setHasManuallySelectedAvatar(true);
+              }
             }
           })
           .catch(() => {});
@@ -182,16 +196,16 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
 
   const handleNameChange = (name: string) => {
     setHeroName(name);
-    if (name.trim()) {
-      setAvatarSeed(name.trim());
+    if (name.trim() && !hasManuallySelectedAvatar) {
+      setAvatarUrl(`https://api.dicebear.com/7.x/pixel-art/svg?seed=${encodeURIComponent(name.trim())}`);
     }
   };
 
   const randomizeAvatar = () => {
-    const seeds = ['Gandalf', 'Conan', 'Legolas', 'Uther', 'Trinity', 'Neo', 'Ada', 'Turing'];
-    const picked =
-      seeds[Math.floor(Math.random() * seeds.length)] + '_' + Math.floor(Math.random() * 999);
-    setAvatarSeed(picked);
+    const randomIndex = Math.floor(Math.random() * AVATAR_PRESETS.length);
+    const picked = AVATAR_PRESETS[randomIndex];
+    setAvatarUrl(picked.url);
+    setHasManuallySelectedAvatar(true);
   };
 
   const handleLogout = () => {
@@ -267,7 +281,12 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
       setAuthSession(session);
       setHeroName(session.user.name);
       setHeroEmail(session.user.email);
-      setAvatarSeed(session.user.name || 'HeroDev');
+      if (session.user.avatar_url) {
+        setAvatarUrl(session.user.avatar_url);
+        setHasManuallySelectedAvatar(true);
+      } else if (session.user.name) {
+        setAvatarUrl(`https://api.dicebear.com/7.x/pixel-art/svg?seed=${encodeURIComponent(session.user.name)}`);
+      }
       setSsoProvider('direct');
       localStorage.setItem('tech_guilds_auth', JSON.stringify(session));
 
@@ -275,6 +294,10 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
       if (existing) {
         setExistingHeroId(existing.id);
         if (existing.hero_class) setSelectedClass(existing.hero_class as HeroClass);
+        if (existing.avatar_url) {
+          setAvatarUrl(existing.avatar_url);
+          setHasManuallySelectedAvatar(true);
+        }
         const membership = await api.getHeroGuild(existing.id).catch(() => null);
         if (membership && membership.guild_id) {
           setSelectedGuildId(membership.guild_id);
@@ -297,17 +320,20 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
     setIsLoggingIn(true);
     setErrorMessage('');
     try {
-      const token =
-        explicitToken ||
-        customToken.trim() ||
-        `dev-${provider}-${avatarSeed.toLowerCase().replace(/[^a-z0-9]/g, '') || 'developer'}`;
+      const dummySeed = (heroName || 'developer').toLowerCase().replace(/[^a-z0-9]/g, '') || 'developer';
+      const token = explicitToken || customToken.trim() || `dev-${provider}-${dummySeed}`;
 
       const session = await api.loginSSO(provider, token);
       setAuthSession(session);
       setSsoProvider(provider);
       setHeroName(session.user.name);
       setHeroEmail(session.user.email);
-      setAvatarSeed(session.user.name || 'HeroDev');
+      if (session.user.avatar_url) {
+        setAvatarUrl(session.user.avatar_url);
+        setHasManuallySelectedAvatar(true);
+      } else if (session.user.name) {
+        setAvatarUrl(`https://api.dicebear.com/7.x/pixel-art/svg?seed=${encodeURIComponent(session.user.name)}`);
+      }
 
       // Persiste sessão
       localStorage.setItem('tech_guilds_auth', JSON.stringify(session));
@@ -477,18 +503,39 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
           {authSession ? (
             <div className="p-5 bg-[#122318] border-2 border-o2-green rounded mb-6 space-y-4 shadow-xl">
               <div className="flex flex-col sm:flex-row items-center gap-4">
-                <img
-                  src={avatarUrl}
-                  alt="Avatar"
-                  className="w-16 h-16 border-2 border-o2-green p-1 bg-retro-card rounded shadow-md"
-                />
-                <div className="flex-1 text-center sm:text-left">
-                  <div className="text-[11px] font-pixel text-o2-green uppercase tracking-wider">
-                    Herói Autenticado
+                <div
+                  className="relative group cursor-pointer"
+                  onClick={() => setIsAvatarModalOpen(true)}
+                  title="Clique para escolher outro visual"
+                >
+                  <img
+                    src={avatarUrl}
+                    alt="Avatar"
+                    className="w-16 h-16 border-2 border-o2-green p-1 bg-retro-card rounded shadow-md group-hover:scale-105 transition"
+                  />
+                  <div className="absolute inset-0 bg-black/60 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-[9px] font-pixel text-o2-green text-center p-0.5">
+                    TROCAR
                   </div>
-                  <h3 className="font-pixel text-base text-white">{authSession.user.name}</h3>
-                  <p className="text-xs font-mono text-gray-300">{authSession.user.email}</p>
-                  <div className="flex items-center gap-2 mt-1.5 justify-center sm:justify-start">
+                </div>
+                <div className="flex-1 text-center sm:text-left">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <div>
+                      <div className="text-[11px] font-pixel text-o2-green uppercase tracking-wider">
+                        Herói Autenticado
+                      </div>
+                      <h3 className="font-pixel text-base text-white">{authSession.user.name}</h3>
+                      <p className="text-xs font-mono text-gray-300">{authSession.user.email}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsAvatarModalOpen(true)}
+                      className="pixel-btn pixel-btn-dark py-1.5 px-3 text-xs flex items-center justify-center gap-1.5 text-o2-green border border-o2-green/60 hover:bg-o2-green/10 shadow-sm self-center sm:self-start"
+                    >
+                      <Palette className="w-3.5 h-3.5" />
+                      <span>Escolher Visual</span>
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2 mt-2 justify-center sm:justify-start">
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-black/40 border border-retro-border text-gray-300">
                       Provedor: <strong className="text-o2-green uppercase">{authSession.user.provider}</strong>
                     </span>
@@ -573,24 +620,71 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
               {authMode === 'register' && (
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {/* Visual retrô */}
-                    <div className="flex flex-col items-center justify-center p-4 bg-[#0e141f] border-2 border-retro-border rounded text-center">
-                      <span className="text-[10px] font-pixel text-gray-400 mb-2">SPRITE 16-BIT RETRÔ</span>
-                      <img
-                        src={avatarUrl}
-                        alt="Avatar Preview"
-                        className="w-28 h-28 border-2 border-o2-green p-1 bg-retro-card rounded mb-3 shadow-lg"
-                      />
-                      <span className="text-xs font-mono text-o2-green truncate max-w-full font-bold">
-                        {heroName || 'Novo Herói'}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={randomizeAvatar}
-                        className="mt-2 text-xs text-retro-cyan hover:underline flex items-center gap-1 font-mono"
-                      >
-                        <Dices className="w-3.5 h-3.5" /> Sortear Visual
-                      </button>
+                    {/* Visual retrô & Seletor de Galeria */}
+                    <div className="flex flex-col items-center justify-between p-4 bg-[#0e141f] border-2 border-retro-border rounded text-center space-y-3">
+                      <div>
+                        <span className="text-[10px] font-pixel text-gray-400 block mb-1">VISUAL DO HERÓI</span>
+                        <div
+                          className="relative group cursor-pointer inline-block"
+                          onClick={() => setIsAvatarModalOpen(true)}
+                          title="Clique para abrir a galeria de visuais"
+                        >
+                          <img
+                            src={avatarUrl}
+                            alt="Avatar Preview"
+                            className="w-24 h-24 border-2 border-o2-green p-1 bg-retro-card rounded shadow-lg group-hover:scale-105 transition"
+                          />
+                          <div className="absolute inset-0 bg-black/60 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-[9px] font-pixel text-o2-green">
+                            ALTERAR
+                          </div>
+                        </div>
+                        <span className="text-xs font-mono text-o2-green truncate block max-w-full font-bold mt-1">
+                          {heroName || 'Novo Herói'}
+                        </span>
+                      </div>
+
+                      {/* Seleção Rápida: 4 miniaturas em destaque */}
+                      <div className="w-full pt-1 border-t border-retro-border/60">
+                        <span className="text-[10px] font-mono text-gray-400 block mb-1.5">Sugestões Rápidas:</span>
+                        <div className="grid grid-cols-4 gap-1.5">
+                          {AVATAR_PRESETS.slice(0, 4).map((preset) => (
+                            <button
+                              key={preset.id}
+                              type="button"
+                              onClick={() => {
+                                setAvatarUrl(preset.url);
+                                setHasManuallySelectedAvatar(true);
+                              }}
+                              className={`p-1 rounded border transition ${
+                                avatarUrl === preset.url
+                                  ? 'border-o2-green bg-[#17261b]'
+                                  : 'border-retro-border bg-retro-dark hover:border-gray-500'
+                              }`}
+                              title={`${preset.name} - ${preset.title}`}
+                            >
+                              <img src={preset.url} alt={preset.name} className="w-full h-8 object-contain" />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="w-full space-y-1.5 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setIsAvatarModalOpen(true)}
+                          className="pixel-btn pixel-btn-primary py-1.5 px-2 text-xs flex items-center justify-center gap-1.5 w-full shadow-md"
+                        >
+                          <Palette className="w-3.5 h-3.5" />
+                          <span>ESCOLHER VISUAL...</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={randomizeAvatar}
+                          className="text-xs text-retro-cyan hover:underline flex items-center justify-center gap-1 font-mono w-full pt-1"
+                        >
+                          <Dices className="w-3.5 h-3.5" /> Sortear Aleatório
+                        </button>
+                      </div>
                     </div>
 
                     {/* Campos de formulário real */}
@@ -848,17 +942,39 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
 
           {/* Ficha da Classe */}
           <div className="p-4 bg-[#0e141f] border-2 border-o2-green rounded mb-6">
-            <div className="flex items-center justify-between mb-3 border-b border-retro-border pb-2">
-              <div className="flex items-center gap-2">
-                <span className="text-2xl">{currentClassDetails.icon}</span>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3 border-b border-retro-border pb-3">
+              <div className="flex items-center gap-3">
+                <img
+                  src={avatarUrl}
+                  alt="Herói"
+                  className="w-12 h-12 border-2 border-o2-green p-0.5 bg-retro-card rounded shadow cursor-pointer hover:scale-105 transition"
+                  onClick={() => setIsAvatarModalOpen(true)}
+                  title="Clique para alterar visual"
+                />
                 <div>
-                  <span className="font-pixel text-xs text-o2-green">{currentClassDetails.title}</span>
-                  <span className="text-xs text-gray-400 font-mono ml-2">
-                    ({currentClassDetails.role})
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">{currentClassDetails.icon}</span>
+                    <span className="font-pixel text-xs text-o2-green">{currentClassDetails.title}</span>
+                    <span className="text-xs text-gray-400 font-mono">
+                      ({currentClassDetails.role})
+                    </span>
+                  </div>
+                  <span className="text-[11px] font-mono text-gray-300">
+                    Herói: <strong className="text-white">{heroName || 'Aventureiro'}</strong>
                   </span>
                 </div>
               </div>
-              <span className="font-pixel text-xs text-retro-gold">NÍVEL 1</span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsAvatarModalOpen(true)}
+                  className="pixel-btn pixel-btn-dark py-1 px-2.5 text-[11px] flex items-center gap-1 text-o2-green border border-o2-green/60 hover:bg-o2-green/10"
+                >
+                  <Palette className="w-3 h-3" />
+                  <span>Trocar Visual</span>
+                </button>
+                <span className="font-pixel text-xs text-retro-gold">NÍVEL 1</span>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -1090,11 +1206,27 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
 
           <div className="p-6 bg-[#0e141f] border-2 border-o2-green rounded mb-6 shadow-xl">
             <div className="flex flex-col sm:flex-row items-center gap-6 border-b border-retro-border pb-6">
-              <img
-                src={avatarUrl}
-                alt="Avatar Final"
-                className="w-24 h-24 border-2 border-o2-green p-1 bg-retro-card rounded shadow-md"
-              />
+              <div
+                className="relative group cursor-pointer text-center flex-shrink-0"
+                onClick={() => setIsAvatarModalOpen(true)}
+                title="Clique para alterar visual"
+              >
+                <img
+                  src={avatarUrl}
+                  alt="Avatar Final"
+                  className="w-24 h-24 border-2 border-o2-green p-1 bg-retro-card rounded shadow-md group-hover:scale-105 transition"
+                />
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsAvatarModalOpen(true);
+                  }}
+                  className="text-[11px] font-mono text-retro-cyan hover:underline flex items-center gap-1 mt-1.5 justify-center w-full"
+                >
+                  <Palette className="w-3 h-3" /> Alterar Visual
+                </button>
+              </div>
               <div className="text-center sm:text-left space-y-1">
                 <h3 className="font-pixel text-base text-white">{heroName}</h3>
                 <p className="text-sm text-o2-green font-mono">{heroEmail}</p>
@@ -1204,6 +1336,17 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
           </div>
         </div>
       )}
+
+      {/* Modal de Seleção de Avatar / Visual RPG */}
+      <AvatarPickerModal
+        isOpen={isAvatarModalOpen}
+        onClose={() => setIsAvatarModalOpen(false)}
+        currentAvatarUrl={avatarUrl}
+        onSelectAvatar={(url) => {
+          setAvatarUrl(url);
+          setHasManuallySelectedAvatar(true);
+        }}
+      />
     </div>
   );
 };
