@@ -81,12 +81,11 @@ export const App: React.FC = () => {
           // Nenhuma guilda no banco: encaminha para o Onboarding real
           setCurrentView('onboarding');
         }
-      } else if (guilds.length > 0) {
-        setGuildId(guilds[0].id);
       } else {
-        // Sem guilda e sem auth: vai para onboarding
+        // Sem autenticação: vai direto para cadastro de conta real e onboarding
         setCurrentView('onboarding');
       }
+      setIsLoading(false);
     };
 
     initApp();

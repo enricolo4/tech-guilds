@@ -6,6 +6,22 @@ from services.auth.domain.model.user_claims import UserClaims
 
 
 @dataclass(frozen=True)
+class RegisterAccountCommand:
+    """Comando de entrada para criação de conta direta com e-mail corporativo."""
+    email: str
+    name: str
+    password: str | None = None
+    avatar_url: str | None = None
+
+
+@dataclass(frozen=True)
+class LoginDirectCommand:
+    """Comando de entrada para login direto com e-mail corporativo."""
+    email: str
+    password: str | None = None
+
+
+@dataclass(frozen=True)
 class LoginSSOCommand:
     """Comando de entrada para autenticação via provedor SSO."""
     token: str
@@ -35,7 +51,17 @@ class ValidateTokenResult:
 
 
 class AuthenticateUserPort(ABC):
-    """Porta Primária (Driving Port) para autenticação de usuários via SSO."""
+    """Porta Primária (Driving Port) para autenticação e cadastro de usuários."""
+
+    @abstractmethod
+    async def register_account(self, command: RegisterAccountCommand) -> LoginSSOResult:
+        """Cria uma conta real para o usuário, salvando a sessão e emitindo o token JWT."""
+        pass
+
+    @abstractmethod
+    async def login_direct(self, command: LoginDirectCommand) -> LoginSSOResult:
+        """Autentica o usuário diretamente com seu e-mail corporativo."""
+        pass
 
     @abstractmethod
     async def login_sso(self, command: LoginSSOCommand) -> LoginSSOResult:

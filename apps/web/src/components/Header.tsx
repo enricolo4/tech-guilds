@@ -98,7 +98,7 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={() => onNavigate('onboarding')}
               className="text-xs text-retro-cyan hover:underline flex items-center gap-1"
             >
-              <span>🔑</span> Fazer Login SSO
+              <span>🔑</span> Criar Conta / Entrar
             </button>
           )}
 

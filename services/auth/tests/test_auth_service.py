@@ -466,3 +466,38 @@ async def test_session_model_and_in_memory_repository():
     converted_domain = orm_model.to_domain()
     assert converted_domain.id == session.id
     assert converted_domain.email == session.email
+
+
+def test_api_register_and_login_direct_flow():
+    mock_sso = MockSSOAdapter()
+    session_repo = InMemorySessionRepository()
+    token_service = JoseJWTService(secret_key="api-secret-key-123")
+    test_container = AuthContainer(
+        sso_adapter=mock_sso,
+        session_repository=session_repo,
+        token_service=token_service,
+    )
+    AuthContainer.set_instance(test_container)
+    client = TestClient(app)
+
+    # Cadastro de conta real
+    reg_resp = client.post("/auth/register", json={
+        "name": "Alex Real Dev",
+        "email": "alex.real@corp.com",
+        "password": "secretpassword123",
+    })
+    assert reg_resp.status_code == 201
+    data = reg_resp.json()
+    assert data["user"]["email"] == "alex.real@corp.com"
+    assert data["user"]["name"] == "Alex Real Dev"
+    assert data["access_token"] is not None
+
+    # Login direto
+    login_resp = client.post("/auth/login", json={
+        "email": "alex.real@corp.com",
+        "password": "secretpassword123",
+    })
+    assert login_resp.status_code == 200
+    login_data = login_resp.json()
+    assert login_data["user"]["email"] == "alex.real@corp.com"
+    assert login_data["access_token"] is not None

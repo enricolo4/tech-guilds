@@ -17,6 +17,40 @@ export interface CreateGuildParams {
 
 export const api = {
   // 1. Autenticação & SSO (Microsserviço Auth)
+  async registerAccount(params: {
+    name: string;
+    email: string;
+    password?: string;
+    avatar_url?: string;
+  }): Promise<AuthSession> {
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Falha ao registrar conta real.');
+    }
+    return res.json();
+  },
+
+  async loginDirect(params: {
+    email: string;
+    password?: string;
+  }): Promise<AuthSession> {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Falha ao realizar login com e-mail corporativo.');
+    }
+    return res.json();
+  },
+
   async loginSSO(provider: string, token: string): Promise<AuthSession> {
     const res = await fetch('/api/auth/sso/login', {
       method: 'POST',

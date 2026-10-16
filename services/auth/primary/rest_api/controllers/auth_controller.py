@@ -14,6 +14,18 @@ from services.auth.primary.rest_api.dependencies.container import (
 )
 
 
+class RegisterAccountRequest(BaseModel):
+    name: str = Field(..., min_length=2, max_length=120, description="Nome do usuário/herói")
+    email: str = Field(..., description="E-mail corporativo")
+    password: str | None = Field(None, description="Senha do usuário (opcional para auth simplificada)")
+    avatar_url: str | None = Field(None, description="URL do avatar")
+
+
+class LoginDirectRequest(BaseModel):
+    email: str = Field(..., description="E-mail corporativo")
+    password: str | None = Field(None, description="Senha do usuário")
+
+
 class LoginSSORequest(BaseModel):
     token: str = Field(..., description="Token de ID ou acesso fornecido pelo provedor SSO")
     provider: str = Field(..., description="Nome do provedor (google, github, azure, microsoft)")
@@ -50,6 +62,74 @@ class ValidateTokenResponse(BaseModel):
 
 
 router = APIRouter(prefix="/auth", tags=["Autenticação & Sessões"])
+
+
+@router.post("/register", response_model=LoginSSOResponse, status_code=status.HTTP_201_CREATED)
+async def register_account(
+    request: RegisterAccountRequest,
+    auth_port: AuthenticateUserPort = Depends(get_auth_port),
+):
+    """Cria uma conta real para o usuário, emitindo o token JWT e iniciando a sessão."""
+    try:
+        from services.auth.domain.ports.primary.auth_port import RegisterAccountCommand
+        command = RegisterAccountCommand(
+            name=request.name,
+            email=request.email,
+            password=request.password,
+            avatar_url=request.avatar_url,
+        )
+        result = await auth_port.register_account(command)
+        return LoginSSOResponse(
+            access_token=result.auth_token.access_token,
+            token_type=result.auth_token.token_type,
+            expires_in=result.auth_token.expires_in,
+            session_id=result.session_id,
+            user=UserClaimsResponse(
+                email=result.user.email,
+                name=result.user.name,
+                provider=result.user.provider,
+                provider_user_id=result.user.provider_user_id,
+                avatar_url=result.user.avatar_url,
+            ),
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+
+@router.post("/login", response_model=LoginSSOResponse, status_code=status.HTTP_200_OK)
+async def login_direct(
+    request: LoginDirectRequest,
+    auth_port: AuthenticateUserPort = Depends(get_auth_port),
+):
+    """Autentica o usuário diretamente com seu e-mail corporativo."""
+    try:
+        from services.auth.domain.ports.primary.auth_port import LoginDirectCommand
+        command = LoginDirectCommand(
+            email=request.email,
+            password=request.password,
+        )
+        result = await auth_port.login_direct(command)
+        return LoginSSOResponse(
+            access_token=result.auth_token.access_token,
+            token_type=result.auth_token.token_type,
+            expires_in=result.auth_token.expires_in,
+            session_id=result.session_id,
+            user=UserClaimsResponse(
+                email=result.user.email,
+                name=result.user.name,
+                provider=result.user.provider,
+                provider_user_id=result.user.provider_user_id,
+                avatar_url=result.user.avatar_url,
+            ),
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
 
 
 @router.post("/login/sso", response_model=LoginSSOResponse, status_code=status.HTTP_200_OK)

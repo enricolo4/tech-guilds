@@ -54,6 +54,16 @@ class PostgresSessionRepository(SessionRepository):
             models = result.scalars().all()
             return [m.to_domain() for m in models]
 
+    async def find_by_email(self, email: str) -> Session | None:
+        async with self._session_factory() as db:
+            result = await db.execute(
+                select(SessionModel)
+                .where(SessionModel.email == email)
+                .order_by(SessionModel.created_at.desc())
+            )
+            model = result.scalars().first()
+            return model.to_domain() if model else None
+
 
 class InMemorySessionRepository(SessionRepository):
     """Implementação em memória da porta SessionRepository para testes e ambientes locais."""
@@ -74,3 +84,8 @@ class InMemorySessionRepository(SessionRepository):
 
     async def find_by_user_id(self, user_id: str) -> List[Session]:
         return [s for s in self._sessions.values() if s.user_id == user_id]
+
+    async def find_by_email(self, email: str) -> Session | None:
+        matches = [s for s in self._sessions.values() if s.email == email]
+        return matches[-1] if matches else None
+

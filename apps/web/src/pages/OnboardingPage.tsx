@@ -12,6 +12,10 @@ import {
   Check,
   Building2,
   Users,
+  UserPlus,
+  LogIn,
+  LogOut,
+  KeyRound,
 } from 'lucide-react';
 
 interface ClassOption {
@@ -95,9 +99,12 @@ interface OnboardingPageProps {
 export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
   const [currentStep, setCurrentStep] = useState(1);
 
-  // Autenticação & SSO
+  // Autenticação & Conta Real
+  const [authMode, setAuthMode] = useState<'register' | 'login' | 'sso'>('register');
   const [authSession, setAuthSession] = useState<AuthSession | null>(null);
-  const [ssoProvider, setSsoProvider] = useState<'google' | 'github' | 'azure'>('github');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [ssoProvider, setSsoProvider] = useState<'google' | 'github' | 'azure' | 'direct'>('direct');
   const [customToken, setCustomToken] = useState('');
   const [showTokenInput, setShowTokenInput] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -146,7 +153,7 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
   useEffect(() => {
     fetchGuilds();
 
-    // Recupera sessão SSO salva, se houver
+    // Recupera sessão salva, se houver
     const savedAuth = localStorage.getItem('tech_guilds_auth');
     if (savedAuth) {
       try {
@@ -154,7 +161,7 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
         setAuthSession(parsed);
         setHeroName(parsed.user.name);
         setHeroEmail(parsed.user.email);
-        setSsoProvider((parsed.user.provider as any) || 'github');
+        setSsoProvider((parsed.user.provider as any) || 'direct');
         if (parsed.user.name) setAvatarSeed(parsed.user.name);
 
         // Checa se já tem herói cadastrado
@@ -187,7 +194,102 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
     setAvatarSeed(picked);
   };
 
-  // Executa o Login Real via Microsserviço de Auth
+  const handleLogout = () => {
+    localStorage.removeItem('tech_guilds_auth');
+    setAuthSession(null);
+    setHeroName('');
+    setHeroEmail('');
+    setPassword('');
+    setExistingHeroId(null);
+    setErrorMessage('');
+  };
+
+  // 1. Criação de Conta Real no Microsserviço de Auth
+  const handleRegisterAccount = async () => {
+    if (!heroName.trim() || heroName.trim().length < 2) {
+      setErrorMessage('Por favor, informe seu nome ou apelido (mínimo 2 caracteres).');
+      return;
+    }
+    if (!heroEmail.trim() || !heroEmail.includes('@')) {
+      setErrorMessage('Por favor, informe um e-mail corporativo válido.');
+      return;
+    }
+
+    setIsLoggingIn(true);
+    setErrorMessage('');
+    try {
+      const session = await api.registerAccount({
+        name: heroName.trim(),
+        email: heroEmail.trim().toLowerCase(),
+        password: password.trim() || undefined,
+        avatar_url: avatarUrl,
+      });
+
+      setAuthSession(session);
+      setSsoProvider('direct');
+      localStorage.setItem('tech_guilds_auth', JSON.stringify(session));
+
+      // Verifica se o herói já foi cadastrado
+      const existing = await api.getHeroByEmail(session.user.email).catch(() => null);
+      if (existing) {
+        setExistingHeroId(existing.id);
+        if (existing.hero_class) setSelectedClass(existing.hero_class as HeroClass);
+        const membership = await api.getHeroGuild(existing.id).catch(() => null);
+        if (membership && membership.guild_id) {
+          setSelectedGuildId(membership.guild_id);
+        }
+      }
+
+      // Avança diretamente para Escolha de Classe!
+      setCurrentStep(2);
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Falha ao criar conta real.');
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  // 2. Login Direto com Conta Existente
+  const handleLoginDirect = async () => {
+    if (!heroEmail.trim() || !heroEmail.includes('@')) {
+      setErrorMessage('Por favor, informe o e-mail da sua conta.');
+      return;
+    }
+
+    setIsLoggingIn(true);
+    setErrorMessage('');
+    try {
+      const session = await api.loginDirect({
+        email: heroEmail.trim().toLowerCase(),
+        password: password.trim() || undefined,
+      });
+
+      setAuthSession(session);
+      setHeroName(session.user.name);
+      setHeroEmail(session.user.email);
+      setAvatarSeed(session.user.name || 'HeroDev');
+      setSsoProvider('direct');
+      localStorage.setItem('tech_guilds_auth', JSON.stringify(session));
+
+      const existing = await api.getHeroByEmail(session.user.email).catch(() => null);
+      if (existing) {
+        setExistingHeroId(existing.id);
+        if (existing.hero_class) setSelectedClass(existing.hero_class as HeroClass);
+        const membership = await api.getHeroGuild(existing.id).catch(() => null);
+        if (membership && membership.guild_id) {
+          setSelectedGuildId(membership.guild_id);
+        }
+      }
+
+      setCurrentStep(2);
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Falha ao entrar com a conta informada.');
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  // 3. Login via Provedor SSO
   const executeSSOLogin = async (
     provider: 'google' | 'github' | 'azure',
     explicitToken?: string
@@ -216,12 +318,13 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
         setExistingHeroId(existing.id);
         if (existing.hero_class) setSelectedClass(existing.hero_class as HeroClass);
 
-        // Checa se já tem guilda vinculada
         const membership = await api.getHeroGuild(existing.id).catch(() => null);
         if (membership && membership.guild_id) {
           setSelectedGuildId(membership.guild_id);
         }
       }
+
+      setCurrentStep(2);
     } catch (err: any) {
       setErrorMessage(err.message || 'Falha ao autenticar via SSO.');
     } finally {
@@ -232,13 +335,13 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
   const handleNextStep = (targetStep: number) => {
     setErrorMessage('');
     if (targetStep === 2) {
-      if (!authSession && (!heroName.trim() || !heroEmail.includes('@'))) {
+      if (!authSession) {
         setErrorMessage(
-          'Por favor, realize o login corporativo SSO ou preencha seu nome e e-mail corporativo.'
+          'Por favor, crie sua conta real ou faça login para avançar.'
         );
         return;
       }
-      if (heroName.trim().length < 2) {
+      if (!heroName.trim() || heroName.trim().length < 2) {
         setErrorMessage('Nome do herói deve conter pelo menos 2 caracteres.');
         return;
       }
@@ -262,14 +365,15 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
     setErrorMessage('');
     try {
       // 1. Cadastra o herói no microsserviço de Registration
-      const token = authSession ? authSession.access_token : `dev-${ssoProvider}-token`;
+      const token = authSession ? authSession.access_token : undefined;
+      const provider = authSession?.user?.provider || ssoProvider;
       const regRes = await api.registerHero({
         name: heroName.trim(),
         email: heroEmail.trim().toLowerCase(),
         hero_class: selectedClass,
         avatar_url: avatarUrl,
         sso_token: token,
-        sso_provider: ssoProvider,
+        sso_provider: provider,
       });
 
       const hero = regRes.hero || regRes;
@@ -350,16 +454,16 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
         </div>
       )}
 
-      {/* PASSO 1: SSO & IDENTIDADE */}
+      {/* PASSO 1: AUTENTICAÇÃO REAL & IDENTIDADE */}
       {currentStep === 1 && (
         <div className="pixel-box p-6 md:p-8 bg-retro-card">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 border-b border-retro-border pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6 border-b border-retro-border pb-3">
             <div>
               <h2 className="font-pixel text-sm md:text-base text-o2-green flex items-center gap-2">
-                <span>🔐</span> LOGIN CORPORATIVO SSO & IDENTIDADE
+                <span>🔐</span> IDENTIDADE & CONTA REAL
               </h2>
               <p className="text-xs text-gray-400 font-mono mt-1">
-                Autentique-se com sua credencial corporativa para emitir um token JWT de sessão.
+                Crie sua conta real ou faça login corporativo para emitir um token JWT assinado e persistido no PostgreSQL.
               </p>
             </div>
             {authSession && (
@@ -369,170 +473,326 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
             )}
           </div>
 
-          {/* Seletor de Provedor SSO */}
-          <div className="mb-6 p-4 bg-[#0e141f] border-2 border-retro-border rounded">
-            <span className="text-xs font-pixel text-gray-300 block mb-3 uppercase tracking-wider">
-              1. Selecione seu Provedor de Identidade Corporativo:
-            </span>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-              <button
-                type="button"
-                onClick={() => {
-                  setSsoProvider('github');
-                  executeSSOLogin('github');
-                }}
-                disabled={isLoggingIn}
-                className={`pixel-btn py-2.5 px-3 text-xs flex items-center justify-center gap-2 transition-all ${
-                  ssoProvider === 'github' && authSession
-                    ? 'border-o2-green bg-[#17261b] text-o2-green font-bold'
-                    : 'pixel-btn-dark'
-                }`}
-              >
-                <span>🐙</span> GitHub Enterprise
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setSsoProvider('google');
-                  executeSSOLogin('google');
-                }}
-                disabled={isLoggingIn}
-                className={`pixel-btn py-2.5 px-3 text-xs flex items-center justify-center gap-2 transition-all ${
-                  ssoProvider === 'google' && authSession
-                    ? 'border-o2-green bg-[#17261b] text-o2-green font-bold'
-                    : 'pixel-btn-dark'
-                }`}
-              >
-                <span>🌐</span> Google Workspace
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setSsoProvider('azure');
-                  executeSSOLogin('azure');
-                }}
-                disabled={isLoggingIn}
-                className={`pixel-btn py-2.5 px-3 text-xs flex items-center justify-center gap-2 transition-all ${
-                  ssoProvider === 'azure' && authSession
-                    ? 'border-o2-green bg-[#17261b] text-o2-green font-bold'
-                    : 'pixel-btn-dark'
-                }`}
-              >
-                <span>🔷</span> Microsoft Azure AD
-              </button>
-            </div>
-
-            {/* Opção para inserir token OAuth real ou alternar modo */}
-            <div className="border-t border-retro-border/60 pt-3 flex flex-wrap items-center justify-between text-xs font-mono text-gray-400 gap-2">
-              <button
-                type="button"
-                onClick={() => setShowTokenInput(!showTokenInput)}
-                className="text-retro-cyan hover:underline flex items-center gap-1"
-              >
-                <Lock className="w-3.5 h-3.5" />
-                {showTokenInput ? 'Ocultar entrada de token' : 'Inserir Token OAuth / Personal Access Token'}
-              </button>
-
-              <span className="text-[11px] text-gray-400">
-                {isLoggingIn ? 'Autenticando no serviço de Auth...' : 'Tokens simulados (dev-*) são aceitos em ambiente local.'}
-              </span>
-            </div>
-
-            {showTokenInput && (
-              <div className="mt-3 flex gap-2">
-                <input
-                  type="text"
-                  value={customToken}
-                  onChange={(e) => setCustomToken(e.target.value)}
-                  placeholder={`Cole o token de acesso ${ssoProvider}...`}
-                  className="flex-1 bg-[#0b0e14] border border-retro-border focus:border-o2-green px-3 py-1.5 text-xs text-white font-mono rounded"
+          {/* SESSÃO ATIVA DETECTADA */}
+          {authSession ? (
+            <div className="p-5 bg-[#122318] border-2 border-o2-green rounded mb-6 space-y-4 shadow-xl">
+              <div className="flex flex-col sm:flex-row items-center gap-4">
+                <img
+                  src={avatarUrl}
+                  alt="Avatar"
+                  className="w-16 h-16 border-2 border-o2-green p-1 bg-retro-card rounded shadow-md"
                 />
+                <div className="flex-1 text-center sm:text-left">
+                  <div className="text-[11px] font-pixel text-o2-green uppercase tracking-wider">
+                    Herói Autenticado
+                  </div>
+                  <h3 className="font-pixel text-base text-white">{authSession.user.name}</h3>
+                  <p className="text-xs font-mono text-gray-300">{authSession.user.email}</p>
+                  <div className="flex items-center gap-2 mt-1.5 justify-center sm:justify-start">
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-black/40 border border-retro-border text-gray-300">
+                      Provedor: <strong className="text-o2-green uppercase">{authSession.user.provider}</strong>
+                    </span>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-black/40 border border-retro-border text-gray-300">
+                      Sessão: <strong className="text-retro-cyan">PostgreSQL (auth.sessions)</strong>
+                    </span>
+                    {existingHeroId && (
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-950/60 border border-retro-cyan text-cyan-200">
+                        Herói Vinculado: <strong>{existingHeroId.slice(0, 8)}...</strong>
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-o2-green/30">
                 <button
                   type="button"
-                  onClick={() => executeSSOLogin(ssoProvider, customToken)}
-                  className="pixel-btn pixel-btn-primary px-3 py-1 text-xs"
+                  onClick={handleLogout}
+                  className="pixel-btn pixel-btn-dark py-2 px-3 text-xs flex items-center gap-1.5 text-gray-300"
                 >
-                  AUTENTICAR
+                  <LogOut className="w-3.5 h-3.5" /> Trocar de Conta / Sair
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleNextStep(2)}
+                  className="pixel-btn pixel-btn-primary py-2 px-5 text-xs flex items-center gap-2 shadow-lg"
+                >
+                  <span>ESCOLHER CLASSE RPG</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
-            )}
-          </div>
-
-          {/* Perfil e Customização do Sprite */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="flex flex-col items-center justify-center p-4 bg-[#0e141f] border-2 border-retro-border rounded text-center">
-              <span className="text-[10px] font-pixel text-gray-400 mb-2">SPRITE 16-BIT RETRÔ</span>
-              <img
-                src={avatarUrl}
-                alt="Avatar Preview"
-                className="w-28 h-28 border-2 border-o2-green p-1 bg-retro-card rounded mb-3 shadow-lg"
-              />
-              <span className="text-xs font-mono text-o2-green truncate max-w-full font-bold">
-                {heroName || 'Herói Anônimo'}
-              </span>
-              <button
-                type="button"
-                onClick={randomizeAvatar}
-                className="mt-2 text-xs text-retro-cyan hover:underline flex items-center gap-1 font-mono"
-              >
-                <Dices className="w-3.5 h-3.5" /> Sortear Visual
-              </button>
             </div>
+          ) : (
+            <>
+              {/* TABS DE SELEÇÃO: CRIAR CONTA REAL / LOGIN / SSO */}
+              <div className="flex border-b-2 border-retro-border mb-6 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setAuthMode('register')}
+                  className={`py-2.5 px-4 font-pixel text-xs flex items-center gap-2 border-b-2 transition -mb-[2px] ${
+                    authMode === 'register'
+                      ? 'border-o2-green text-o2-green bg-[#17261b] font-bold'
+                      : 'border-transparent text-gray-400 hover:text-white'
+                  }`}
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span>CRIAR CONTA REAL</span>
+                </button>
 
-            <div className="md:col-span-2 space-y-4">
-              <div>
-                <label className="block text-xs font-pixel text-gray-300 mb-1">
-                  NOME DO HERÓI / DEVELOPER *
-                </label>
-                <input
-                  type="text"
-                  value={heroName}
-                  onChange={(e) => handleNameChange(e.target.value)}
-                  placeholder="Ex: Gandalf Dev, Alice Frontend"
-                  className="w-full bg-[#0b0e14] border-2 border-retro-border focus:border-o2-green px-3 py-2 text-white font-mono text-base outline-none rounded"
-                />
+                <button
+                  type="button"
+                  onClick={() => setAuthMode('login')}
+                  className={`py-2.5 px-4 font-pixel text-xs flex items-center gap-2 border-b-2 transition -mb-[2px] ${
+                    authMode === 'login'
+                      ? 'border-o2-green text-o2-green bg-[#17261b] font-bold'
+                      : 'border-transparent text-gray-400 hover:text-white'
+                  }`}
+                >
+                  <LogIn className="w-4 h-4" />
+                  <span>JÁ TENHO CONTA (ENTRAR)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setAuthMode('sso')}
+                  className={`py-2.5 px-4 font-pixel text-xs flex items-center gap-2 border-b-2 transition -mb-[2px] ${
+                    authMode === 'sso'
+                      ? 'border-o2-green text-o2-green bg-[#17261b] font-bold'
+                      : 'border-transparent text-gray-400 hover:text-white'
+                  }`}
+                >
+                  <Lock className="w-4 h-4" />
+                  <span>SSO CORPORATIVO</span>
+                </button>
               </div>
 
-              <div>
-                <label className="block text-xs font-pixel text-gray-300 mb-1">
-                  E-MAIL CORPORATIVO *
-                </label>
-                <input
-                  type="email"
-                  value={heroEmail}
-                  onChange={(e) => setHeroEmail(e.target.value)}
-                  placeholder="Ex: alex@company.com"
-                  className="w-full bg-[#0b0e14] border-2 border-retro-border focus:border-o2-green px-3 py-2 text-white font-mono text-base outline-none rounded"
-                />
-              </div>
+              {/* ABA 1: CRIAR CONTA REAL */}
+              {authMode === 'register' && (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Visual retrô */}
+                    <div className="flex flex-col items-center justify-center p-4 bg-[#0e141f] border-2 border-retro-border rounded text-center">
+                      <span className="text-[10px] font-pixel text-gray-400 mb-2">SPRITE 16-BIT RETRÔ</span>
+                      <img
+                        src={avatarUrl}
+                        alt="Avatar Preview"
+                        className="w-28 h-28 border-2 border-o2-green p-1 bg-retro-card rounded mb-3 shadow-lg"
+                      />
+                      <span className="text-xs font-mono text-o2-green truncate max-w-full font-bold">
+                        {heroName || 'Novo Herói'}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={randomizeAvatar}
+                        className="mt-2 text-xs text-retro-cyan hover:underline flex items-center gap-1 font-mono"
+                      >
+                        <Dices className="w-3.5 h-3.5" /> Sortear Visual
+                      </button>
+                    </div>
 
-              {existingHeroId && (
-                <div className="p-3 bg-blue-950/60 border border-retro-cyan text-cyan-200 text-xs font-mono rounded">
-                  ℹ️ Já existe um registro para este e-mail no schema <code>registration.heroes</code>. O
-                  fluxo sincronizará suas configurações existentes.
+                    {/* Campos de formulário real */}
+                    <div className="md:col-span-2 space-y-4">
+                      <div>
+                        <label className="block text-xs font-pixel text-gray-300 mb-1">
+                          NOME DO HERÓI / DESENVOLVEDOR *
+                        </label>
+                        <input
+                          type="text"
+                          value={heroName}
+                          onChange={(e) => handleNameChange(e.target.value)}
+                          placeholder="Ex: Enrico Dev, Alex Backend"
+                          className="w-full bg-[#0b0e14] border-2 border-retro-border focus:border-o2-green px-3 py-2 text-white font-mono text-base outline-none rounded"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-pixel text-gray-300 mb-1">
+                          E-MAIL CORPORATIVO *
+                        </label>
+                        <input
+                          type="email"
+                          value={heroEmail}
+                          onChange={(e) => setHeroEmail(e.target.value)}
+                          placeholder="Ex: seu-nome@empresa.com"
+                          className="w-full bg-[#0b0e14] border-2 border-retro-border focus:border-o2-green px-3 py-2 text-white font-mono text-base outline-none rounded"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-pixel text-gray-300 mb-1">
+                          SENHA DE ACESSO (OPCIONAL)
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={showPassword ? 'text' : 'password'}
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="Defina uma senha ou deixe em branco para token direto"
+                            className="w-full bg-[#0b0e14] border-2 border-retro-border focus:border-o2-green px-3 py-2 text-white font-mono text-base outline-none rounded pr-16"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-mono text-retro-cyan hover:underline px-1 py-0.5"
+                          >
+                            {showPassword ? 'Ocultar' : 'Exibir'}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="pt-2 text-[11px] text-gray-400 font-mono">
+                        🛡️ Sua conta será criada no microsserviço <code>services/auth</code>, gerando sessão no banco PostgreSQL e token JWT assinado criptograficamente.
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-8 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={handleRegisterAccount}
+                      disabled={isLoggingIn}
+                      className="pixel-btn pixel-btn-primary px-6 py-3 text-xs flex items-center gap-2 shadow-xl"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      <span>{isLoggingIn ? 'CRIANDO CONTA NO POSTGRESQL...' : 'CRIAR MINHA CONTA REAL & AVANÇAR'}</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               )}
 
-              <div className="pt-2 text-xs text-gray-500 font-mono">
-                * Concluído o registro, o evento <code>tech_guilds.hero.registered</code> será disparado
-                via NATS JetStream para inicializar suas fichas nos outros microsserviços.
-              </div>
-            </div>
-          </div>
+              {/* ABA 2: JÁ TENHO CONTA (LOGIN DIRETO) */}
+              {authMode === 'login' && (
+                <div className="space-y-4 max-w-lg mx-auto p-6 bg-[#0e141f] border-2 border-retro-border rounded">
+                  <h3 className="font-pixel text-xs text-o2-green uppercase tracking-wider mb-2">
+                    Entrar com E-mail Corporativo
+                  </h3>
 
-          <div className="mt-8 flex justify-end">
-            <button
-              type="button"
-              onClick={() => handleNextStep(2)}
-              className="pixel-btn pixel-btn-primary px-5 py-2.5 text-xs flex items-center gap-2"
-            >
-              <span>ESCOLHER CLASSE RPG</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
+                  <div>
+                    <label className="block text-xs font-pixel text-gray-300 mb-1">
+                      E-MAIL CORPORATIVO *
+                    </label>
+                    <input
+                      type="email"
+                      value={heroEmail}
+                      onChange={(e) => setHeroEmail(e.target.value)}
+                      placeholder="Ex: alex@empresa.com"
+                      className="w-full bg-[#0b0e14] border-2 border-retro-border focus:border-o2-green px-3 py-2 text-white font-mono text-base outline-none rounded"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-pixel text-gray-300 mb-1">
+                      SENHA DE ACESSO
+                    </label>
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Sua senha (se cadastrada)"
+                      className="w-full bg-[#0b0e14] border-2 border-retro-border focus:border-o2-green px-3 py-2 text-white font-mono text-base outline-none rounded"
+                    />
+                  </div>
+
+                  <div className="pt-4 flex justify-between items-center">
+                    <button
+                      type="button"
+                      onClick={() => setAuthMode('register')}
+                      className="text-xs text-retro-cyan hover:underline font-mono"
+                    >
+                      Não tem conta? Crie aqui
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleLoginDirect}
+                      disabled={isLoggingIn}
+                      className="pixel-btn pixel-btn-primary px-5 py-2.5 text-xs flex items-center gap-2"
+                    >
+                      <LogIn className="w-3.5 h-3.5" />
+                      <span>{isLoggingIn ? 'ENTRANDO...' : 'ENTRAR & AVANÇAR'}</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* ABA 3: SSO CORPORATIVO */}
+              {authMode === 'sso' && (
+                <div className="p-4 bg-[#0e141f] border-2 border-retro-border rounded space-y-4">
+                  <span className="text-xs font-pixel text-gray-300 block mb-2 uppercase tracking-wider">
+                    Selecione o Provedor OAuth Corporativo:
+                  </span>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSsoProvider('github');
+                        executeSSOLogin('github');
+                      }}
+                      disabled={isLoggingIn}
+                      className="pixel-btn pixel-btn-dark py-3 px-3 text-xs flex items-center justify-center gap-2 hover:border-o2-green"
+                    >
+                      <span>🐙</span> GitHub Enterprise
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSsoProvider('google');
+                        executeSSOLogin('google');
+                      }}
+                      disabled={isLoggingIn}
+                      className="pixel-btn pixel-btn-dark py-3 px-3 text-xs flex items-center justify-center gap-2 hover:border-o2-green"
+                    >
+                      <span>🌐</span> Google Workspace
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSsoProvider('azure');
+                        executeSSOLogin('azure');
+                      }}
+                      disabled={isLoggingIn}
+                      className="pixel-btn pixel-btn-dark py-3 px-3 text-xs flex items-center justify-center gap-2 hover:border-o2-green"
+                    >
+                      <span>🔷</span> Microsoft Azure AD
+                    </button>
+                  </div>
+
+                  <div className="border-t border-retro-border/60 pt-3 flex flex-wrap items-center justify-between text-xs font-mono text-gray-400 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowTokenInput(!showTokenInput)}
+                      className="text-retro-cyan hover:underline flex items-center gap-1"
+                    >
+                      <KeyRound className="w-3.5 h-3.5" />
+                      {showTokenInput ? 'Ocultar entrada de token' : 'Inserir Personal Access Token / OAuth Token'}
+                    </button>
+                  </div>
+
+                  {showTokenInput && (
+                    <div className="mt-2 flex gap-2">
+                      <input
+                        type="text"
+                        value={customToken}
+                        onChange={(e) => setCustomToken(e.target.value)}
+                        placeholder={`Cole seu token ${ssoProvider}...`}
+                        className="flex-1 bg-[#0b0e14] border border-retro-border focus:border-o2-green px-3 py-1.5 text-xs text-white font-mono rounded"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => executeSSOLogin(ssoProvider as any, customToken)}
+                        className="pixel-btn pixel-btn-primary px-3 py-1 text-xs"
+                      >
+                        AUTENTICAR
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
 

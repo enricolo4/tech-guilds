@@ -25,3 +25,9 @@ class SessionRepository(ABC):
     async def find_by_user_id(self, user_id: str) -> List[Session]:
         """Retorna todas as sessões associadas a um usuário."""
         pass
+
+    @abstractmethod
+    async def find_by_email(self, email: str) -> Session | None:
+        """Recupera a sessão mais recente associada a um e-mail corporativo."""
+        pass
+
