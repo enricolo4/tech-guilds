@@ -463,7 +463,7 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
                 <span>🔐</span> IDENTIDADE & CONTA REAL
               </h2>
               <p className="text-xs text-gray-400 font-mono mt-1">
-                Crie sua conta real ou faça login corporativo para emitir um token JWT assinado e persistido no PostgreSQL.
+                Crie sua conta real ou faça login corporativo para acessar seu esquadrão e registrar seu herói.
               </p>
             </div>
             {authSession && (
@@ -492,11 +492,14 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-black/40 border border-retro-border text-gray-300">
                       Provedor: <strong className="text-o2-green uppercase">{authSession.user.provider}</strong>
                     </span>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-black/40 border border-retro-border text-gray-300">
-                      Sessão: <strong className="text-retro-cyan">PostgreSQL (auth.sessions)</strong>
+                    <span
+                      className="text-[10px] font-mono px-2 py-0.5 rounded bg-black/40 border border-retro-border text-gray-300"
+                      title={authSession.session_id}
+                    >
+                      Sessão: <strong className="text-retro-cyan font-mono">{authSession.session_id ? `${authSession.session_id.slice(0, 8)}...` : 'Ativa'}</strong>
                     </span>
                     {existingHeroId && (
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-950/60 border border-retro-cyan text-cyan-200">
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-950/60 border border-retro-cyan text-cyan-200" title={existingHeroId}>
                         Herói Vinculado: <strong>{existingHeroId.slice(0, 8)}...</strong>
                       </span>
                     )}
@@ -641,7 +644,7 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
                       </div>
 
                       <div className="pt-2 text-[11px] text-gray-400 font-mono">
-                        🛡️ Sua conta será criada no microsserviço <code>services/auth</code>, gerando sessão no banco PostgreSQL e token JWT assinado criptograficamente.
+                        🛡️ Sua conta e credenciais são autenticadas com criptografia e segurança de ponta a ponta.
                       </div>
                     </div>
                   </div>
@@ -654,7 +657,7 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
                       className="pixel-btn pixel-btn-primary px-6 py-3 text-xs flex items-center gap-2 shadow-xl"
                     >
                       <Sparkles className="w-4 h-4" />
-                      <span>{isLoggingIn ? 'CRIANDO CONTA NO POSTGRESQL...' : 'CRIAR MINHA CONTA REAL & AVANÇAR'}</span>
+                      <span>{isLoggingIn ? 'CRIANDO SUA CONTA...' : 'CRIAR MINHA CONTA REAL & AVANÇAR'}</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -940,7 +943,7 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
             <span>🏰</span> ESQUADRÃO (GUILDA) & COOPERAÇÃO
           </h2>
           <p className="text-sm text-gray-400 mb-6 font-mono">
-            Vincule seu herói a um Squad existente ou funde uma nova guilda no PostgreSQL.
+            Vincule seu herói a um Squad existente ou funde uma nova guilda para seu time.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
@@ -973,7 +976,7 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
               <Users className="w-6 h-6 text-retro-cyan mb-2" />
               <span className="font-pixel text-xs text-white block mb-1">ENTRAR EM SQUAD</span>
               <p className="text-xs text-gray-400 font-mono">
-                Unir forças com um time já existente no banco.
+                Unir forças com um time já existente.
               </p>
             </div>
 
@@ -1025,7 +1028,7 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
           {guildMode === 'join' && (
             <div className="space-y-4 p-4 bg-[#0e141f] border border-retro-border rounded mb-6">
               <label className="block text-xs font-pixel text-gray-300 mb-1">
-                SELECIONE O ESQUADRÃO NO BANCO POSTGRESQL *
+                SELECIONE O ESQUADRÃO DISPONÍVEL *
               </label>
               {existingGuilds.length > 0 ? (
                 <select
@@ -1041,7 +1044,7 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
                 </select>
               ) : (
                 <div className="p-3 bg-amber-950/40 border border-retro-gold text-amber-300 text-xs font-mono rounded">
-                  ⚠️ Nenhuma guilda ativa encontrada no banco de dados. Recomendamos selecionar{' '}
+                  ⚠️ Nenhum esquadrão ativo encontrado no momento. Recomendamos selecionar{' '}
                   <strong>CRIAR NOVO SQUAD</strong> para fundar seu primeiro time!
                 </div>
               )}
@@ -1079,11 +1082,10 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
       {currentStep === 4 && (
         <div className="pixel-box p-6 md:p-8 bg-retro-card">
           <h2 className="font-pixel text-sm md:text-base text-o2-green mb-2 flex items-center gap-2">
-            <span>📜</span> CONFIRMAÇÃO & DISPARO DE EVENTOS
+            <span>📜</span> CONFIRMAÇÃO & FORJA DO HERÓI
           </h2>
           <p className="text-sm text-gray-400 mb-6 font-mono">
-            Ao confirmar, seu Herói será persistido em <code>registration.heroes</code> e o evento de
-            domínio será emitido no NATS JetStream para inicialização no PostgreSQL.
+            Ao confirmar, seu Herói será registrado oficialmente e suas fichas de RPG serão sincronizadas em todo o sistema.
           </p>
 
           <div className="p-6 bg-[#0e141f] border-2 border-o2-green rounded mb-6 shadow-xl">
@@ -1125,8 +1127,8 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
                 <span className="text-white uppercase font-bold">{ssoProvider}</span>
               </div>
               <div>
-                <span className="text-gray-400 block">Barramento NATS:</span>
-                <span className="text-o2-green font-bold">tech_guilds.hero.registered</span>
+                <span className="text-gray-400 block">Protocolo:</span>
+                <span className="text-o2-green font-bold">Convocação Oficial do Herói</span>
               </div>
             </div>
           </div>
@@ -1149,7 +1151,7 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
               <Sparkles className="w-4 h-4" />
               <span>
                 {isSubmitting
-                  ? 'PERSISTINDO NO POSTGRESQL & NATS...'
+                  ? 'FORJANDO HERÓI & SINCRONIZANDO...'
                   : 'FORJAR HERÓI & ENTRAR NA BATALHA'}
               </span>
             </button>
@@ -1165,8 +1167,7 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
             HERÓI FORJADO COM SUCESSO!
           </h2>
           <p className="text-sm text-gray-300 font-mono max-w-md mx-auto">
-            O herói <strong className="text-white">{heroName}</strong> foi registrado com sucesso no
-            PostgreSQL e sincronizado via NATS JetStream para todos os microsserviços!
+            O herói <strong className="text-white">{heroName}</strong> foi registrado com sucesso e sua jornada no esquadrão foi iniciada!
           </p>
 
           <div className="p-4 bg-[#0e141f] border border-retro-border rounded max-w-sm mx-auto text-xs font-mono text-left space-y-1.5">
@@ -1186,7 +1187,7 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
             )}
             <div className="pt-1">
               <span className="text-o2-green font-bold flex items-center gap-1">
-                <CheckCircle className="w-3.5 h-3.5" /> BANCO DE DADOS SINCRONIZADO
+                <CheckCircle className="w-3.5 h-3.5" /> HERÓI PRONTO PARA A BATALHA
               </span>
             </div>
           </div>

@@ -106,7 +106,7 @@ export const App: React.FC = () => {
       console.error('Falha ao carregar dashboard real:', err);
       setErrorMessage(
         err.message ||
-          'Não foi possível carregar os dados desta guilda no PostgreSQL. Verifique se o backend está ativo.'
+          'Não foi possível carregar os dados desta guilda. Verifique se os serviços estão ativos.'
       );
     } finally {
       setIsLoading(false);
@@ -173,7 +173,7 @@ export const App: React.FC = () => {
           <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
             <Loader2 className="w-10 h-10 text-o2-green animate-spin" />
             <span className="font-pixel text-xs text-o2-green tracking-widest animate-pulse">
-              CONECTANDO AO BANCO POSTGRESQL & NATS JETSTREAM...
+              CONECTANDO AO ESQUADRÃO & SINCRONIZANDO DADOS...
             </span>
           </div>
         ) : dashboardData ? (

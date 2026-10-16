@@ -117,7 +117,7 @@ export const Header: React.FC<HeaderProps> = ({
                 <button
                   onClick={onRefresh}
                   className="pixel-btn pixel-btn-dark px-3 py-1.5 flex items-center gap-1.5 text-xs text-gray-200"
-                  title="Sincronizar com PostgreSQL & NATS"
+                  title="Sincronizar dados do esquadrão"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
                   <span>SYNC</span>

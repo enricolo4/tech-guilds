@@ -161,7 +161,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ data, onRefresh })
         <div className="mt-4">
           <div className="flex justify-between items-center text-xs font-mono mb-1">
             <span className="text-o2-green flex items-center gap-1 font-pixel text-[10px]">
-              <Sparkles className="w-3 h-3" /> GUILD EXP COLETIVO (POSTGRESQL)
+              <Sparkles className="w-3 h-3" /> GUILD EXP COLETIVO
             </span>
             <span className="text-gray-300">
               {guild.experience} / {guild.experience_to_next_level} XP ({guild.experience_percent}%)
