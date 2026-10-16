@@ -154,7 +154,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-retro-dark text-white font-terminal selection:bg-o2-green selection:text-black">
+    <div className="min-h-screen bg-retro-dark text-white font-sans antialiased selection:bg-o2-green selection:text-black">
       <Header
         currentView={currentView}
         onNavigate={handleNavigate}
@@ -166,7 +166,7 @@ export const App: React.FC = () => {
         onLogout={handleLogout}
       />
 
-      <main className="scanlines">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 py-6">
         {currentView === 'onboarding' ? (
           <OnboardingPage onFinish={handleFinishOnboarding} />
         ) : isLoading ? (

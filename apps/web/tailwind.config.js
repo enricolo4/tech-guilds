@@ -15,8 +15,10 @@ export default {
         'retro-purple': '#9d4edd',
       },
       fontFamily: {
-        pixel: ['"Press Start 2P"', 'monospace'],
-        terminal: ['VT323', 'monospace'],
+        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+        display: ['"Space Grotesk"', 'sans-serif'],
+        pixel: ['"Space Grotesk"', 'sans-serif'],
+        terminal: ['"Plus Jakarta Sans"', 'sans-serif'],
       },
     },
   },

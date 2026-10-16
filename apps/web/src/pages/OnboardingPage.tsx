@@ -6,7 +6,6 @@ import {
   ArrowRight,
   ArrowLeft,
   Dices,
-  CheckCircle,
   ShieldAlert,
   Lock,
   Check,
@@ -511,7 +510,7 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
                   <img
                     src={avatarUrl}
                     alt="Avatar"
-                    className="w-16 h-16 border-2 border-o2-green p-1 bg-retro-card rounded shadow-md group-hover:scale-105 transition"
+                    className="w-16 h-16 border-2 border-o2-green p-1 bg-retro-card rounded-2xl shadow-md group-hover:scale-105 transition object-contain"
                   />
                   <div className="absolute inset-0 bg-black/60 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-[9px] font-pixel text-o2-green text-center p-0.5">
                     TROCAR
@@ -632,7 +631,7 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
                           <img
                             src={avatarUrl}
                             alt="Avatar Preview"
-                            className="w-24 h-24 border-2 border-o2-green p-1 bg-retro-card rounded shadow-lg group-hover:scale-105 transition"
+                            className="w-24 h-24 border-2 border-o2-green p-1 bg-retro-card rounded-2xl shadow-lg group-hover:scale-105 transition object-contain"
                           />
                           <div className="absolute inset-0 bg-black/60 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-[9px] font-pixel text-o2-green">
                             ALTERAR
@@ -1214,7 +1213,7 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
                 <img
                   src={avatarUrl}
                   alt="Avatar Final"
-                  className="w-24 h-24 border-2 border-o2-green p-1 bg-retro-card rounded shadow-md group-hover:scale-105 transition"
+                  className="w-24 h-24 border-2 border-o2-green p-1 bg-retro-card rounded-2xl shadow-md group-hover:scale-105 transition object-contain"
                 />
                 <button
                   type="button"
@@ -1293,44 +1292,54 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
 
       {/* PASSO 5: SUCESSO */}
       {currentStep === 5 && (
-        <div className="pixel-box pixel-box-green p-8 text-center space-y-6 bg-retro-card">
-          <div className="text-6xl animate-bounce">🎉</div>
-          <h2 className="font-pixel text-base md:text-lg text-o2-green">
-            HERÓI FORJADO COM SUCESSO!
-          </h2>
-          <p className="text-sm text-gray-300 font-mono max-w-md mx-auto">
-            O herói <strong className="text-white">{heroName}</strong> foi registrado com sucesso e sua jornada no esquadrão foi iniciada!
-          </p>
-
-          <div className="p-4 bg-[#0e141f] border border-retro-border rounded max-w-sm mx-auto text-xs font-mono text-left space-y-1.5">
-            <div>
-              <span className="text-gray-400">ID do Herói:</span>{' '}
-              <span className="text-retro-cyan truncate block">{registeredHeroId}</span>
-            </div>
-            <div>
-              <span className="text-gray-400">Classe Atribuída:</span>{' '}
-              <span className="text-retro-gold font-bold">{selectedClass}</span>
-            </div>
-            {finalGuildId && (
-              <div>
-                <span className="text-gray-400">ID do Esquadrão:</span>{' '}
-                <span className="text-o2-green truncate block">{finalGuildId}</span>
-              </div>
-            )}
-            <div className="pt-1">
-              <span className="text-o2-green font-bold flex items-center gap-1">
-                <CheckCircle className="w-3.5 h-3.5" /> HERÓI PRONTO PARA A BATALHA
-              </span>
+        <div className="pixel-box pixel-box-green p-8 sm:p-10 text-center space-y-6 bg-retro-card max-w-xl mx-auto shadow-2xl">
+          <div className="relative inline-block mx-auto">
+            <img
+              src={avatarUrl}
+              alt="Herói Forjado"
+              className="w-28 h-28 rounded-2xl border-2 border-o2-green p-1 bg-[#0b0e14] shadow-xl object-contain mx-auto"
+            />
+            <div className="absolute -bottom-2 -right-2 bg-o2-green text-black font-bold p-1 rounded-full shadow-md">
+              <Check className="w-5 h-5 stroke-[3]" />
             </div>
           </div>
 
-          <div className="pt-4">
+          <div>
+            <span className="text-xs font-mono text-o2-green uppercase tracking-wider block mb-1">
+              Convocação Oficial Concluída
+            </span>
+            <h2 className="font-display text-xl sm:text-2xl font-bold text-white">
+              Herói Pronto para a Batalha!
+            </h2>
+            <p className="text-sm text-gray-300 mt-2 max-w-md mx-auto">
+              O herói <strong className="text-white">{heroName}</strong> foi registrado com sucesso e sua jornada no esquadrão foi iniciada.
+            </p>
+          </div>
+
+          <div className="p-4 bg-[#0a0e17] border border-white/10 rounded-xl text-left text-xs font-mono space-y-2 max-w-sm mx-auto">
+            <div className="flex justify-between items-center">
+              <span className="text-gray-400">Classe Atribuída:</span>
+              <span className="text-retro-gold font-bold">{selectedClass}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-400">ID do Herói:</span>
+              <span className="text-retro-cyan font-mono truncate max-w-[180px]">{registeredHeroId}</span>
+            </div>
+            {finalGuildId && (
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">Esquadrão:</span>
+                <span className="text-o2-green font-mono truncate max-w-[180px]">{finalGuildId}</span>
+              </div>
+            )}
+          </div>
+
+          <div className="pt-2">
             <button
               type="button"
               onClick={() => onFinish(finalGuildId || undefined)}
-              className="pixel-btn pixel-btn-primary px-6 py-3 text-xs sm:text-sm inline-flex items-center gap-2 shadow-2xl"
+              className="pixel-btn pixel-btn-primary px-8 py-3.5 text-sm inline-flex items-center gap-2.5 shadow-xl hover:shadow-o2-green/30 transition rounded-xl font-bold tracking-wide"
             >
-              <span>🏰 ENTRAR NO SQUAD DASHBOARD REAL</span>
+              <span>Entrar no Dashboard</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>

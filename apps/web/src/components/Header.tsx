@@ -24,24 +24,24 @@ export const Header: React.FC<HeaderProps> = ({
   onLogout,
 }) => {
   return (
-    <header className="border-b-2 border-retro-border bg-retro-card px-6 py-3.5 shadow-md sticky top-0 z-50">
+    <header className="border-b border-retro-border/80 bg-retro-card/95 backdrop-blur-md px-4 sm:px-6 py-3 shadow-lg sticky top-0 z-50">
       <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
         {/* Brand */}
         <div
           onClick={() => onNavigate('dashboard')}
           className="flex items-center space-x-3 cursor-pointer group"
         >
-          <div className="w-9 h-9 border-2 border-o2-green bg-[#0b0e14] flex items-center justify-center text-xl shadow-md group-hover:scale-105 transition-transform">
+          <div className="w-10 h-10 rounded-xl border border-o2-green/60 bg-[#0b0e14] flex items-center justify-center text-xl shadow-md group-hover:scale-105 transition-transform">
             ⚔️
           </div>
           <div>
-            <h1 className="font-pixel text-xs sm:text-sm text-o2-green tracking-wider flex items-center gap-2">
-              TECH GUILDS{' '}
-              <span className="text-[9px] text-retro-cyan bg-retro-border px-1.5 py-0.5 rounded">
-                HEXAGONAL MONOREPO
+            <h1 className="font-display font-bold text-sm sm:text-base text-white tracking-wide flex items-center gap-2">
+              TECH GUILDS
+              <span className="text-[10px] text-o2-green bg-o2-green/10 border border-o2-green/30 px-2 py-0.5 rounded-full font-mono">
+                SQUAD RPG
               </span>
             </h1>
-            <p className="text-[11px] text-gray-400 font-mono">GAMIFIED SQUAD ARCHITECTURE & COMBAT</p>
+            <p className="text-[11px] text-gray-400 font-mono">ENGENHARIA COLABORATIVA & MISSÕES</p>
           </div>
         </div>
 
@@ -68,19 +68,19 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Usuário Autenticado via SSO */}
           {authSession ? (
-            <div className="flex items-center gap-2 bg-[#0e141f] border border-o2-green/60 rounded px-2.5 py-1">
+            <div className="flex items-center gap-2 bg-[#0e141f] border border-o2-green/40 rounded-full px-3 py-1 shadow-sm">
               <img
                 src={
                   authSession.user.avatar_url ||
                   `https://api.dicebear.com/7.x/adventurer/svg?seed=${authSession.user.name}`
                 }
                 alt={authSession.user.name}
-                className="w-5 h-5 rounded border border-o2-green"
+                className="w-6 h-6 rounded-full border border-o2-green object-contain bg-[#0b0e14]"
               />
-              <span className="text-white font-bold truncate max-w-[140px]">
+              <span className="text-white font-medium truncate max-w-[140px]">
                 {authSession.user.name}
               </span>
-              <span className="text-[9px] px-1 py-0.2 rounded bg-retro-border text-retro-cyan uppercase">
+              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-retro-border text-retro-cyan uppercase font-mono">
                 {authSession.user.provider}
               </span>
               {onLogout && (

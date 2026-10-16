@@ -342,7 +342,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ data, onRefresh })
                   <img
                     src={hero.avatar_url}
                     alt={hero.name}
-                    className="w-14 h-14 border-2 border-o2-green p-0.5 bg-[#0b0e14] rounded shadow-md"
+                    className="w-14 h-14 border-2 border-o2-green/80 p-0.5 bg-[#0b0e14] rounded-xl shadow-md object-contain"
                   />
                   <div className="overflow-hidden">
                     <div className="flex items-center gap-1">
