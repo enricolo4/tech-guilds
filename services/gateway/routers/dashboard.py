@@ -23,6 +23,7 @@ router = APIRouter(prefix="/dashboard", tags=["RPG Dashboard"])
 
 WEB_DASHBOARD_DIR = Path(__file__).resolve().parent.parent / "web_dashboard"
 INDEX_HTML_PATH = WEB_DASHBOARD_DIR / "index.html"
+ONBOARDING_HTML_PATH = WEB_DASHBOARD_DIR / "onboarding.html"
 
 DEFAULT_SHOP_ITEMS = [
     {
@@ -402,6 +403,17 @@ async def serve_dashboard():
             detail="Arquivo do dashboard HTML não encontrado."
         )
     return HTMLResponse(content=INDEX_HTML_PATH.read_text(encoding="utf-8"))
+
+
+@router.get("/onboarding", response_class=HTMLResponse)
+async def serve_onboarding():
+    """Entrega a página HTML de Onboarding de Herói e Criação de Squad."""
+    if not ONBOARDING_HTML_PATH.exists():
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Arquivo de onboarding HTML não encontrado."
+        )
+    return HTMLResponse(content=ONBOARDING_HTML_PATH.read_text(encoding="utf-8"))
 
 
 @router.get("/static/css/retro.css")

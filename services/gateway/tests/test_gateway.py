@@ -64,3 +64,16 @@ def test_gateway_mounts_gamification_routes(client):
     response = client.get("/api/gamification/quests")
     assert response.status_code == 200
     assert isinstance(response.json(), list)
+
+
+def test_gateway_serves_onboarding_page(client):
+    """As rotas /onboarding e /dashboard/onboarding devem servir a página de onboarding."""
+    resp1 = client.get("/onboarding")
+    assert resp1.status_code == 200
+    assert "text/html" in resp1.headers["content-type"]
+    assert "HERO CREATION & SQUAD ONBOARDING" in resp1.text
+
+    resp2 = client.get("/dashboard/onboarding")
+    assert resp2.status_code == 200
+    assert "text/html" in resp2.headers["content-type"]
+    assert "IDENTIFICAÇÃO DO DESENVOLVEDOR" in resp2.text

@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tech Guilds — Onboarding de Herói RPG</title>
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts para Tipografia Retrô -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+
+  <!-- Estilos Retrô Personalizados -->
+  <link rel="stylesheet" href="/dashboard/static/css/retro.css">
+
+  <!-- Alpine.js para Reatividade Rápida -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <style>
+    /* Estilos específicos para a página de onboarding */
+    .class-card {
+      transition: all 0.2s ease-in-out;
+      cursor: pointer;
+    }
+    .class-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 0 16px rgba(107, 241, 105, 0.4), 4px 4px 0 #000;
+    }
+    .class-card.selected {
+      border-color: var(--o2-vivid-green) !important;
+      background-color: #17261b !important;
+      box-shadow: 0 0 20px rgba(107, 241, 105, 0.6), 4px 4px 0 #000;
+    }
+    .stat-fill {
+      transition: width 0.3s ease;
+    }
+  </style>
+</head>
+
+<body class="bg-[#0b0e14] text-white min-h-screen font-terminal text-lg scanlines relative"
+      x-data="onboardingApp()"
+      x-init="initApp()">
+
+  <!-- Cabeçalho Retrô -->
+  <header class="border-b-2 border-[#232d3f] bg-[#121824] px-6 py-4 shadow-md">
+    <div class="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center space-x-3">
+        <span class="text-3xl">⚔️</span>
+        <div>
+          <h1 class="font-pixel text-sm sm:text-base text-[#6BF169] tracking-wider">TECH GUILDS</h1>
+          <p class="text-xs text-gray-400 font-mono">HERO CREATION & SQUAD ONBOARDING</p>
+        </div>
+      </div>
+
+      <!-- Links Rápidos -->
+      <div class="flex items-center space-x-3">
+        <a href="/dashboard" class="pixel-btn pixel-btn-dark text-xs flex items-center space-x-1">
+          <span>🏰</span>
+          <span>VER DASHBOARD</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Container Principal -->
+  <main class="max-w-4xl mx-auto px-4 py-8">
+
+    <!-- Indicador de Passos (Stepper) -->
+    <div class="mb-8">
+      <div class="flex justify-between items-center relative">
+        <!-- Linha de conexão -->
+        <div class="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-[#232d3f] -z-0"></div>
+        <div class="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-[#6BF169] transition-all duration-300 -z-0"
+             :style="`width: ${(currentStep - 1) * 33.3}%`"></div>
+
+        <!-- Passo 1 -->
+        <div class="relative z-10 flex flex-col items-center">
+          <div class="w-10 h-10 rounded border-2 flex items-center justify-center font-pixel text-xs"
+               :class="currentStep >= 1 ? 'border-[#6BF169] bg-[#121824] text-[#6BF169]' : 'border-[#232d3f] bg-[#0b0e14] text-gray-500'">
+            1
+          </div>
+          <span class="text-xs mt-1 font-mono uppercase" :class="currentStep >= 1 ? 'text-[#6BF169]' : 'text-gray-500'">Identidade</span>
+        </div>
+
+        <!-- Passo 2 -->
+        <div class="relative z-10 flex flex-col items-center">
+          <div class="w-10 h-10 rounded border-2 flex items-center justify-center font-pixel text-xs"
+               :class="currentStep >= 2 ? 'border-[#6BF169] bg-[#121824] text-[#6BF169]' : 'border-[#232d3f] bg-[#0b0e14] text-gray-500'">
+            2
+          </div>
+          <span class="text-xs mt-1 font-mono uppercase" :class="currentStep >= 2 ? 'text-[#6BF169]' : 'text-gray-500'">Classe RPG</span>
+        </div>
+
+        <!-- Passo 3 -->
+        <div class="relative z-10 flex flex-col items-center">
+          <div class="w-10 h-10 rounded border-2 flex items-center justify-center font-pixel text-xs"
+               :class="currentStep >= 3 ? 'border-[#6BF169] bg-[#121824] text-[#6BF169]' : 'border-[#232d3f] bg-[#0b0e14] text-gray-500'">
+            3
+          </div>
+          <span class="text-xs mt-1 font-mono uppercase" :class="currentStep >= 3 ? 'text-[#6BF169]' : 'text-gray-500'">Esquadrão</span>
+        </div>
+
+        <!-- Passo 4 -->
+        <div class="relative z-10 flex flex-col items-center">
+          <div class="w-10 h-10 rounded border-2 flex items-center justify-center font-pixel text-xs"
+               :class="currentStep >= 4 ? 'border-[#6BF169] bg-[#121824] text-[#6BF169]' : 'border-[#232d3f] bg-[#0b0e14] text-gray-500'">
+            4
+          </div>
+          <span class="text-xs mt-1 font-mono uppercase" :class="currentStep >= 4 ? 'text-[#6BF169]' : 'text-gray-500'">Prontidão</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- PASSO 1: IDENTIDADE DO HERÓI              -->
+    <!-- ========================================== -->
+    <div x-show="currentStep === 1" x-transition class="pixel-box p-6 md:p-8">
+      <h2 class="font-pixel text-sm md:text-base text-[#6BF169] mb-2 flex items-center gap-2">
+        <span>👤</span> IDENTIFICAÇÃO DO DESENVOLVEDOR
+      </h2>
+      <p class="text-sm text-gray-400 mb-6 font-mono">
+        Todo grande herói precisa de um codinome e de um canal corporativo oficial para receber ordens de missão.
+      </p>
+
+      <!-- Botões de SSO Rápido -->
+      <div class="mb-6 p-4 bg-[#0e141f] border border-[#232d3f] rounded">
+        <span class="text-xs font-mono text-gray-400 block mb-2 uppercase">Login Rápido via SSO Corporativo:</span>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <button type="button" @click="fillSSO('google')" class="pixel-btn pixel-btn-dark text-xs flex items-center justify-center gap-2">
+            <span>🌐</span> Google Workspace
+          </button>
+          <button type="button" @click="fillSSO('github')" class="pixel-btn pixel-btn-dark text-xs flex items-center justify-center gap-2">
+            <span>🐙</span> GitHub Enterprise
+          </button>
+          <button type="button" @click="fillSSO('azure')" class="pixel-btn pixel-btn-dark text-xs flex items-center justify-center gap-2">
+            <span>🔷</span> Azure Active Directory
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Preview do Avatar Pixel Art -->
+        <div class="flex flex-col items-center justify-center p-4 bg-[#0e141f] border-2 border-[#232d3f] rounded text-center">
+          <span class="text-xs font-pixel text-gray-400 mb-2">SPRITE 16-BIT</span>
+          <img :src="avatarUrl" alt="Avatar Preview" class="w-28 h-28 border-2 border-[#6BF169] p-1 bg-[#121824] rounded mb-3 shadow-lg">
+          <span class="text-xs font-mono text-[#6BF169]" x-text="heroName || 'Herói Anônimo'"></span>
+          <button type="button" @click="randomizeAvatar()" class="mt-2 text-xs text-cyan-400 hover:underline">
+            🎲 Sortear Aparência
+          </button>
+        </div>
+
+        <!-- Formulário -->
+        <div class="md:col-span-2 space-y-4">
+          <div>
+            <label class="block text-xs font-pixel text-gray-300 mb-1">NOME DO HERÓI / DEVELOPE R *</label>
+            <input type="text" x-model="heroName" @input="updateAvatar()"
+                   placeholder="Ex: Gandalf Dev, Alice Frontend"
+                   class="w-full bg-[#0b0e14] border-2 border-[#232d3f] focus:border-[#6BF169] px-3 py-2 text-white font-mono text-base outline-none rounded">
+          </div>
+
+          <div>
+            <label class="block text-xs font-pixel text-gray-300 mb-1">E-MAIL CORPORATIVO *</label>
+            <input type="email" x-model="heroEmail"
+                   placeholder="Ex: seu.nome@empresa.com"
+                   class="w-full bg-[#0b0e14] border-2 border-[#232d3f] focus:border-[#6BF169] px-3 py-2 text-white font-mono text-base outline-none rounded">
+          </div>
+
+          <div class="pt-2">
+            <span class="text-xs text-gray-500 font-mono">
+              * O cadastro emitirá o evento <code>tech_guilds.hero.registered</code> no barramento NATS JetStream.
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-8 flex justify-end">
+        <button type="button" @click="nextStep(2)" :disabled="!isStep1Valid"
+                class="pixel-btn pixel-btn-primary text-sm flex items-center gap-2">
+          <span>ESCOLHER CLASSE</span> <span>➡️</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- PASSO 2: ESCOLHA DA CLASSE RPG             -->
+    <!-- ========================================== -->
+    <div x-show="currentStep === 2" x-transition class="pixel-box p-6 md:p-8">
+      <h2 class="font-pixel text-sm md:text-base text-[#6BF169] mb-2 flex items-center gap-2">
+        <span>🪄</span> SELEÇÃO DE CLASSE & ATRIBUTOS
+      </h2>
+      <p class="text-sm text-gray-400 mb-6 font-mono">
+        Sua classe determina seu papel no esquadrão, suas habilidades ativas e o tipo de tarefas que amplificam seus pontos de XP.
+      </p>
+
+      <!-- Grid de Classes -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+        <template x-for="c in availableClasses" :key="c.id">
+          <div class="class-card p-4 border-2 border-[#232d3f] bg-[#0e141f] rounded relative"
+               :class="selectedClass === c.id ? 'selected' : ''"
+               @click="selectClass(c.id)">
+            
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-3xl" x-text="c.icon"></span>
+              <span class="text-xs px-2 py-0.5 rounded font-pixel"
+                    :class="selectedClass === c.id ? 'bg-[#6BF169] text-black font-bold' : 'bg-[#232d3f] text-gray-400'"
+                    x-text="c.role"></span>
+            </div>
+
+            <h3 class="font-pixel text-xs text-white mb-1" x-text="c.title"></h3>
+            <p class="text-xs text-gray-400 font-mono mb-3 leading-tight" x-text="c.description"></p>
+
+            <!-- Arma e Atributo Principal -->
+            <div class="border-t border-[#232d3f] pt-2 text-xs font-mono space-y-1">
+              <div class="text-amber-400 flex items-center gap-1">
+                <span>🗡️</span> <span x-text="c.starterWeapon"></span>
+              </div>
+              <div class="text-cyan-400 flex items-center gap-1">
+                <span>⚡</span> <span x-text="c.skill"></span>
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <!-- Ficha de Atributos da Classe Selecionada -->
+      <div class="p-4 bg-[#0e141f] border-2 border-[#6BF169] rounded mb-6">
+        <div class="flex items-center justify-between mb-3 border-b border-[#232d3f] pb-2">
+          <div class="flex items-center gap-2">
+            <span class="text-2xl" x-text="currentClassDetails.icon"></span>
+            <div>
+              <span class="font-pixel text-xs text-[#6BF169]" x-text="currentClassDetails.title"></span>
+              <span class="text-xs text-gray-400 font-mono ml-2" x-text="`(${currentClassDetails.role})`"></span>
+            </div>
+          </div>
+          <span class="font-pixel text-xs text-amber-400">NÍVEL 1</span>
+        </div>
+
+        <!-- Barras de Atributos -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div>
+            <div class="flex justify-between text-xs font-mono mb-1">
+              <span class="text-red-400 font-bold">FORÇA (STR)</span>
+              <span x-text="currentClassDetails.stats.strength"></span>
+            </div>
+            <div class="w-full bg-[#1b2333] h-2 rounded overflow-hidden">
+              <div class="stat-fill bg-red-500 h-2" :style="`width: ${(currentClassDetails.stats.strength / 30) * 100}%`"></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex justify-between text-xs font-mono mb-1">
+              <span class="text-cyan-400 font-bold">INTELIGÊNCIA (INT)</span>
+              <span x-text="currentClassDetails.stats.intelligence"></span>
+            </div>
+            <div class="w-full bg-[#1b2333] h-2 rounded overflow-hidden">
+              <div class="stat-fill bg-cyan-400 h-2" :style="`width: ${(currentClassDetails.stats.intelligence / 30) * 100}%`"></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex justify-between text-xs font-mono mb-1">
+              <span class="text-green-400 font-bold">CONSTITUIÇÃO (CON)</span>
+              <span x-text="currentClassDetails.stats.constitution"></span>
+            </div>
+            <div class="w-full bg-[#1b2333] h-2 rounded overflow-hidden">
+              <div class="stat-fill bg-green-500 h-2" :style="`width: ${(currentClassDetails.stats.constitution / 30) * 100}%`"></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex justify-between text-xs font-mono mb-1">
+              <span class="text-purple-400 font-bold">PERCEPÇÃO (PER)</span>
+              <span x-text="currentClassDetails.stats.perception"></span>
+            </div>
+            <div class="w-full bg-[#1b2333] h-2 rounded overflow-hidden">
+              <div class="stat-fill bg-purple-400 h-2" :style="`width: ${(currentClassDetails.stats.perception / 30) * 100}%`"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-between">
+        <button type="button" @click="currentStep = 1" class="pixel-btn pixel-btn-dark text-sm">
+          ⬅️ VOLTAR
+        </button>
+        <button type="button" @click="nextStep(3)" class="pixel-btn pixel-btn-primary text-sm flex items-center gap-2">
+          <span>CONFIGURAR ESQUADRÃO</span> <span>➡️</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- PASSO 3: CONFIGURAR ESQUADRÃO / GUILDA    -->
+    <!-- ========================================== -->
+    <div x-show="currentStep === 3" x-transition class="pixel-box p-6 md:p-8">
+      <h2 class="font-pixel text-sm md:text-base text-[#6BF169] mb-2 flex items-center gap-2">
+        <span>🏰</span> ASSOCIAÇÃO A UM ESQUADRÃO (GUILDA)
+      </h2>
+      <p class="text-sm text-gray-400 mb-6 font-mono">
+        Em Tech Guilds, os bônus de XP, recompensas de sprint e combate a Mini-Bosses acontecem cooperativamente em esquadrões.
+      </p>
+
+      <!-- Modos de Guilda -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div class="p-4 border-2 rounded cursor-pointer transition"
+             :class="guildMode === 'create' ? 'border-[#6BF169] bg-[#17261b]' : 'border-[#232d3f] bg-[#0e141f]'"
+             @click="guildMode = 'create'">
+          <span class="text-2xl block mb-1">🏗️</span>
+          <span class="font-pixel text-xs text-white block mb-1">CRIAR NOVO SQUAD</span>
+          <p class="text-xs text-gray-400 font-mono">Fundar uma nova guilda e se tornar o líder fundador.</p>
+        </div>
+
+        <div class="p-4 border-2 rounded cursor-pointer transition"
+             :class="guildMode === 'join' ? 'border-[#6BF169] bg-[#17261b]' : 'border-[#232d3f] bg-[#0e141f]'"
+             @click="guildMode = 'join'">
+          <span class="text-2xl block mb-1">🤝</span>
+          <span class="font-pixel text-xs text-white block mb-1">ENTRAR EM SQUAD</span>
+          <p class="text-xs text-gray-400 font-mono">Unir forças com uma equipe já existente no sistema.</p>
+        </div>
+
+        <div class="p-4 border-2 rounded cursor-pointer transition"
+             :class="guildMode === 'solo' ? 'border-[#6BF169] bg-[#17261b]' : 'border-[#232d3f] bg-[#0e141f]'"
+             @click="guildMode = 'solo'">
+          <span class="text-2xl block mb-1">🐺</span>
+          <span class="font-pixel text-xs text-white block mb-1">LOBO SOLITÁRIO</span>
+          <p class="text-xs text-gray-400 font-mono">Iniciar sem esquadrão e ingressar em uma guilda depois.</p>
+        </div>
+      </div>
+
+      <!-- Detalhes do Modo Criar -->
+      <div x-show="guildMode === 'create'" class="space-y-4 p-4 bg-[#0e141f] border border-[#232d3f] rounded mb-6">
+        <div>
+          <label class="block text-xs font-pixel text-gray-300 mb-1">NOME DO ESQUADRÃO / GUILDA *</label>
+          <input type="text" x-model="newGuildName"
+                 placeholder="Ex: Core Backend Vanguard, Frontend Ninjas"
+                 class="w-full bg-[#0b0e14] border-2 border-[#232d3f] focus:border-[#6BF169] px-3 py-2 text-white font-mono text-base outline-none rounded">
+        </div>
+        <div>
+          <label class="block text-xs font-pixel text-gray-300 mb-1">MISSÃO OU DESCRIÇÃO DO TIME</label>
+          <input type="text" x-model="newGuildDescription"
+                 placeholder="Ex: Responsáveis por microsserviços de alta escala e 99.99% uptime"
+                 class="w-full bg-[#0b0e14] border-2 border-[#232d3f] focus:border-[#6BF169] px-3 py-2 text-white font-mono text-base outline-none rounded">
+        </div>
+      </div>
+
+      <!-- Detalhes do Modo Entrar -->
+      <div x-show="guildMode === 'join'" class="space-y-4 p-4 bg-[#0e141f] border border-[#232d3f] rounded mb-6">
+        <label class="block text-xs font-pixel text-gray-300 mb-1">SELECIONE O ESQUADRÃO ALVO *</label>
+        <template x-if="existingGuilds.length > 0">
+          <select x-model="selectedGuildId" class="w-full bg-[#0b0e14] border-2 border-[#232d3f] focus:border-[#6BF169] px-3 py-2 text-white font-mono text-base outline-none rounded">
+            <option value="">-- Escolha uma guilda ativa --</option>
+            <template x-for="g in existingGuilds" :key="g.id">
+              <option :value="g.id" x-text="`${g.name} (Nível ${g.level} • ${g.member_ids.length} membros)`"></option>
+            </template>
+          </select>
+        </template>
+        <template x-if="existingGuilds.length === 0">
+          <p class="text-xs text-amber-400 font-mono">
+            Nenhuma guilda cadastrada no momento. Recomendamos a opção "CRIAR NOVO SQUAD".
+          </p>
+        </template>
+      </div>
+
+      <!-- Modo Solo -->
+      <div x-show="guildMode === 'solo'" class="p-4 bg-[#0e141f] border border-[#232d3f] rounded mb-6 text-xs text-gray-400 font-mono">
+        💡 Você iniciará como um herói autônomo. Poderá ser recrutado ou criar uma guilda a qualquer momento no painel.
+      </div>
+
+      <div class="flex justify-between">
+        <button type="button" @click="currentStep = 2" class="pixel-btn pixel-btn-dark text-sm">
+          ⬅️ VOLTAR
+        </button>
+        <button type="button" @click="nextStep(4)" class="pixel-btn pixel-btn-primary text-sm flex items-center gap-2">
+          <span>REVISAR FICHA</span> <span>➡️</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- PASSO 4: CONFIRMAÇÃO & FORJA DO PERSONAGEM -->
+    <!-- ========================================== -->
+    <div x-show="currentStep === 4" x-transition class="pixel-box p-6 md:p-8">
+      <h2 class="font-pixel text-sm md:text-base text-[#6BF169] mb-2 flex items-center gap-2">
+        <span>📜</span> FICHA FINAL DO PERSONAGEM
+      </h2>
+      <p class="text-sm text-gray-400 mb-6 font-mono">
+        Confira seus dados antes de registrar seu herói na guilda e disparar os eventos no NATS JetStream.
+      </p>
+
+      <!-- Cartão de Resumo RPG -->
+      <div class="p-6 bg-[#0e141f] border-2 border-[#6BF169] rounded mb-6 shadow-xl">
+        <div class="flex flex-col sm:flex-row items-center gap-6 border-b border-[#232d3f] pb-6">
+          <img :src="avatarUrl" alt="Avatar Final" class="w-24 h-24 border-2 border-[#6BF169] p-1 bg-[#121824] rounded shadow-md">
+          <div class="text-center sm:text-left space-y-1">
+            <h3 class="font-pixel text-base text-white" x-text="heroName"></h3>
+            <p class="text-sm text-[#6BF169] font-mono" x-text="heroEmail"></p>
+            <div class="flex flex-wrap gap-2 pt-1 justify-center sm:justify-start">
+              <span class="text-xs px-2 py-0.5 rounded font-pixel bg-[#232d3f] text-cyan-400"
+                    x-text="currentClassDetails.title"></span>
+              <span class="text-xs px-2 py-0.5 rounded font-pixel bg-[#232d3f] text-amber-400"
+                    x-text="guildMode === 'create' ? `Squad: ${newGuildName}` : (guildMode === 'join' ? 'Ingressando em Squad' : 'Solo')"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 text-xs font-mono">
+          <div>
+            <span class="text-gray-400 block">Arma Inicial:</span>
+            <span class="text-amber-400 font-bold" x-text="currentClassDetails.starterWeapon"></span>
+          </div>
+          <div>
+            <span class="text-gray-400 block">Habilidade Chave:</span>
+            <span class="text-cyan-400 font-bold" x-text="currentClassDetails.skill"></span>
+          </div>
+          <div>
+            <span class="text-gray-400 block">Atributos Base:</span>
+            <span class="text-white"
+                  x-text="`STR: ${currentClassDetails.stats.strength} | INT: ${currentClassDetails.stats.intelligence} | CON: ${currentClassDetails.stats.constitution} | PER: ${currentClassDetails.stats.perception}`"></span>
+          </div>
+          <div>
+            <span class="text-gray-400 block">Sincronização de Dados:</span>
+            <span class="text-green-400 font-bold">NATS JetStream (tech_guilds.*)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mensagens de Erro / Carregando -->
+      <template x-if="errorMessage">
+        <div class="p-3 bg-red-900 border border-red-500 text-red-200 text-xs font-mono rounded mb-4" x-text="errorMessage"></div>
+      </template>
+
+      <div class="flex justify-between items-center">
+        <button type="button" @click="currentStep = 3" :disabled="isSubmitting" class="pixel-btn pixel-btn-dark text-sm">
+          ⬅️ VOLTAR
+        </button>
+
+        <button type="button" @click="submitHero()" :disabled="isSubmitting"
+                class="pixel-btn pixel-btn-primary text-sm flex items-center gap-2">
+          <span x-show="!isSubmitting">⚡ FORJAR HERÓI & ENTRAR NA BATALHA</span>
+          <span x-show="isSubmitting" class="animate-pulse">PUBLICANDO EVENTOS NATS...</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- TELA DE SUCESSO & REDIRECIONAMENTO        -->
+    <!-- ========================================== -->
+    <div x-show="currentStep === 5" x-transition class="pixel-box pixel-box-green p-8 text-center space-y-6">
+      <div class="text-6xl animate-bounce">🎉</div>
+      <h2 class="font-pixel text-lg md:text-xl text-[#6BF169]">HERÓI FORJADO COM SUCESSO!</h2>
+      <p class="text-sm text-gray-300 font-mono max-w-md mx-auto">
+        O herói <strong class="text-white" x-text="heroName"></strong> foi registrado no schema <code class="text-cyan-400">registration</code> e o evento <code class="text-[#6BF169]">hero.registered</code> foi publicado no NATS JetStream com sucesso!
+      </p>
+
+      <div class="p-4 bg-[#0e141f] border border-[#232d3f] rounded max-w-sm mx-auto text-xs font-mono text-left space-y-1">
+        <div><span class="text-gray-400">ID do Herói:</span> <span class="text-cyan-400" x-text="registeredHeroId"></span></div>
+        <div><span class="text-gray-400">Classe Atribuída:</span> <span class="text-amber-400" x-text="selectedClass"></span></div>
+        <div><span class="text-gray-400">Stream NATS:</span> <span class="text-green-400">TECH_GUILDS</span></div>
+      </div>
+
+      <div class="pt-4">
+        <a :href="dashboardRedirectUrl" class="pixel-btn pixel-btn-primary text-base inline-flex items-center gap-2 shadow-2xl">
+          <span>🏰 ACESSAR O SQUAD DASHBOARD</span> <span>🚀</span>
+        </a>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    function onboardingApp() {
+      return {
+        currentStep: 1,
+        heroName: '',
+        heroEmail: '',
+        avatarUrl: 'https://api.dicebear.com/7.x/pixel-art/svg?seed=Adventurer',
+        selectedClass: 'WARRIOR',
+        guildMode: 'create',
+        newGuildName: '',
+        newGuildDescription: '',
+        selectedGuildId: '',
+        existingGuilds: [],
+        isSubmitting: false,
+        errorMessage: '',
+        registeredHeroId: null,
+        createdGuildId: null,
+
+        availableClasses: [
+          {
+            id: 'WARRIOR',
+            title: 'WARRIOR',
+            role: 'Backend Dev',
+            icon: '⚔️',
+            description: 'Especialista em integridade ACID, arquiteturas resilientes e concorrência massiva.',
+            starterWeapon: 'Blade of Postgres Indices',
+            skill: 'Refatoração Brutal',
+            stats: { strength: 24, intelligence: 12, constitution: 20, perception: 10 }
+          },
+          {
+            id: 'MAGE',
+            title: 'MAGE',
+            role: 'Frontend Dev',
+            icon: '🪄',
+            description: 'Mestre da experiência do usuário, animações reativas fluidas e Tailwind CSS.',
+            starterWeapon: 'Staff of Tailwind CSS',
+            skill: 'Script de Automação',
+            stats: { strength: 11, intelligence: 25, constitution: 13, perception: 15 }
+          },
+          {
+            id: 'PALADIN',
+            title: 'PALADIN',
+            role: 'DevOps / SRE',
+            icon: '🛡️',
+            description: 'Guardião de alta disponibilidade (99.99% Uptime) e esteiras de CI/CD blindadas.',
+            starterWeapon: 'Hammer of Kubernetes',
+            skill: 'Escudo de CI/CD',
+            stats: { strength: 18, intelligence: 14, constitution: 24, perception: 12 }
+          },
+          {
+            id: 'RANGER',
+            title: 'RANGER',
+            role: 'QA / Tester',
+            icon: '🏹',
+            description: 'Atirador de precisão caçador de bugs ocultos e mestre de testes E2E.',
+            starterWeapon: 'Bow of Cypress End-to-End',
+            skill: 'Golpe de Edge Case',
+            stats: { strength: 12, intelligence: 16, constitution: 14, perception: 24 }
+          },
+          {
+            id: 'TACTICIAN',
+            title: 'TACTICIAN',
+            role: 'Tech Lead',
+            icon: '📜',
+            description: 'Estrategista que desbloqueia squads, guia a arquitetura e orquestra a sprint.',
+            starterWeapon: 'Tome of Clean Architecture',
+            skill: 'Rally de Sprint',
+            stats: { strength: 16, intelligence: 20, constitution: 16, perception: 18 }
+          },
+          {
+            id: 'NOVICE',
+            title: 'NOVICE',
+            role: 'Iniciante / Trainee',
+            icon: '🐣',
+            description: 'O herói aprendiz pronto para absorver conhecimento e trilhar qualquer especialização.',
+            starterWeapon: 'Teclado Mecânico Básico',
+            skill: 'Vontade de Aprender',
+            stats: { strength: 12, intelligence: 12, constitution: 12, perception: 12 }
+          }
+        ],
+
+        get currentClassDetails() {
+          return this.availableClasses.find(c => c.id === this.selectedClass) || this.availableClasses[0];
+        },
+
+        get isStep1Valid() {
+          return this.heroName.trim().length >= 2 && this.heroEmail.includes('@');
+        },
+
+        get dashboardRedirectUrl() {
+          if (this.createdGuildId) {
+            return `/dashboard?guild_id=${this.createdGuildId}`;
+          }
+          if (this.selectedGuildId) {
+            return `/dashboard?guild_id=${this.selectedGuildId}`;
+          }
+          return '/dashboard';
+        },
+
+        async initApp() {
+          this.updateAvatar();
+          await this.loadGuilds();
+        },
+
+        updateAvatar() {
+          const seed = this.heroName.trim() || 'Hero_' + Math.floor(Math.random() * 1000);
+          this.avatarUrl = `https://api.dicebear.com/7.x/pixel-art/svg?seed=${encodeURIComponent(seed)}`;
+        },
+
+        randomizeAvatar() {
+          const seeds = ['Gandalf', 'Conan', 'Legolas', 'Uther', 'Trinity', 'Neo', 'AdaLovelace', 'Turing'];
+          const picked = seeds[Math.floor(Math.random() * seeds.length)] + '_' + Math.floor(Math.random() * 100);
+          this.avatarUrl = `https://api.dicebear.com/7.x/pixel-art/svg?seed=${encodeURIComponent(picked)}`;
+        },
+
+        fillSSO(provider) {
+          const mockLogins = {
+            google: { name: 'Alex Google Dev', email: 'alex@company.com' },
+            github: { name: 'DevOctocat', email: 'octocat@github-enterprise.corp' },
+            azure: { name: 'Morgan Azure Cloud', email: 'morgan@enterprise.onmicrosoft.com' },
+          };
+          const creds = mockLogins[provider];
+          if (creds) {
+            this.heroName = creds.name;
+            this.heroEmail = creds.email;
+            this.updateAvatar();
+          }
+        },
+
+        selectClass(classId) {
+          this.selectedClass = classId;
+        },
+
+        nextStep(step) {
+          this.errorMessage = '';
+          if (step === 2 && !this.isStep1Valid) {
+            this.errorMessage = 'Por favor, informe seu nome e um e-mail corporativo válido.';
+            return;
+          }
+          if (step === 4 && this.guildMode === 'create' && !this.newGuildName.trim()) {
+            this.errorMessage = 'Por favor, informe um nome para o novo esquadrão.';
+            return;
+          }
+          this.currentStep = step;
+        },
+
+        async loadGuilds() {
+          try {
+            const resp = await fetch('/api/guilds/');
+            if (resp.ok) {
+              const data = await resp.json();
+              this.existingGuilds = Array.isArray(data) ? data : [];
+            }
+          } catch (e) {
+            console.warn('Não foi possível listar guildas existentes:', e);
+          }
+        },
+
+        async submitHero() {
+          this.isSubmitting = true;
+          this.errorMessage = '';
+
+          try {
+            // 1. Cadastra o herói via microsserviço de Registration
+            const regPayload = {
+              name: this.heroName.trim(),
+              email: this.heroEmail.trim().toLowerCase(),
+              hero_class: this.selectedClass,
+              avatar_url: this.avatarUrl,
+            };
+
+            const regResp = await fetch('/api/registration/heroes', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(regPayload),
+            });
+
+            if (!regResp.ok) {
+              const errData = await regResp.json().catch(() => ({}));
+              throw new Error(errData.detail || 'Falha ao registrar herói no serviço de Cadastro.');
+            }
+
+            const heroData = await regResp.json();
+            this.registeredHeroId = heroData.id;
+
+            // 2. Trata associação à guilda/squad
+            if (this.guildMode === 'create' && this.newGuildName.trim()) {
+              const guildPayload = {
+                name: this.newGuildName.trim(),
+                description: this.newGuildDescription.trim() || 'Squad de Desenvolvimento',
+                creator_hero_id: this.registeredHeroId,
+              };
+
+              const guildResp = await fetch('/api/guilds/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(guildPayload),
+              });
+
+              if (guildResp.ok) {
+                const createdGuild = await guildResp.json();
+                this.createdGuildId = createdGuild.id;
+              }
+            } else if (this.guildMode === 'join' && this.selectedGuildId) {
+              await fetch(`/api/guilds/${this.selectedGuildId}/members`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ hero_id: this.registeredHeroId }),
+              });
+            }
+
+            // Sucesso!
+            this.currentStep = 5;
+          } catch (err) {
+            this.errorMessage = err.message || 'Erro inesperado ao criar personagem.';
+          } finally {
+            this.isSubmitting = false;
+          }
+        }
+      };
+    }
+  </script>
+</body>
+</html>

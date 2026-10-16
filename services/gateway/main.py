@@ -96,6 +96,11 @@ def create_gateway_app() -> FastAPI:
     async def root():
         return RedirectResponse(url="/dashboard")
 
+    # Rota direta para Onboarding
+    @app.get("/onboarding", include_in_schema=False)
+    async def onboarding_view():
+        return FileResponse(WEB_DASHBOARD_DIR / "onboarding.html")
+
     # 2. Healthcheck global
     @app.get("/health", tags=["Infraestrutura"])
     async def global_health():
