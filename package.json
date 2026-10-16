@@ -1,0 +1,18 @@
+{
+  "name": "tech-guilds",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Tech Guilds - Gamified Squad & Microservices Monorepo",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "start": "nx run-many -t serve",
+    "build": "nx run-many -t build",
+    "test": "nx run-many -t test",
+    "graph": "nx graph"
+  },
+  "devDependencies": {
+    "nx": "^23.3.0"
+  }
+}

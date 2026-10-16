@@ -1,0 +1,20 @@
+{
+  "name": "gateway",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "services/gateway",
+  "targets": {
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "TESTING=true poetry run pytest services/gateway/tests -v"
+      }
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "poetry run uvicorn services.gateway.main:app --host 0.0.0.0 --port 8000 --reload"
+      }
+    }
+  }
+}

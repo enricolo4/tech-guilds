@@ -1,0 +1,93 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --o2-vivid-green: #6BF169;
+  --o2-intense-gray: #494949;
+  --retro-dark: #0b0e14;
+  --retro-card-bg: #121824;
+  --retro-card-border: #232d3f;
+  --retro-cyan: #00e5ff;
+  --retro-gold: #ffbe33;
+  --retro-red: #ff3864;
+}
+
+/* CRT Scanlines */
+.scanlines {
+  position: relative;
+}
+.scanlines::before {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+  background-size: 100% 4px;
+  z-index: 40;
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+/* Pixel Borders & Shadows */
+.pixel-box {
+  background-color: var(--retro-card-bg);
+  border: 2px solid var(--retro-card-border);
+  box-shadow: 0 0 0 1px #000, 4px 4px 0px 0px rgba(0, 0, 0, 0.7);
+  image-rendering: pixelated;
+}
+
+.pixel-box-green {
+  border-color: var(--o2-vivid-green);
+  box-shadow: 0 0 14px rgba(107, 241, 105, 0.4), 3px 3px 0px #000;
+}
+
+.pixel-box-red {
+  border-color: var(--retro-red);
+  box-shadow: 0 0 14px rgba(255, 56, 100, 0.4), 3px 3px 0px #000;
+}
+
+.pixel-box-gold {
+  border-color: var(--retro-gold);
+  box-shadow: 0 0 14px rgba(255, 190, 51, 0.4), 3px 3px 0px #000;
+}
+
+/* Pixel Buttons */
+.pixel-btn {
+  border: 2px solid #000;
+  box-shadow: inset -2px -2px 0px 0px rgba(0,0,0,0.5), inset 2px 2px 0px 0px rgba(255,255,255,0.2), 3px 3px 0px 0px #000;
+  font-family: 'Press Start 2P', monospace;
+  transition: all 0.05s ease;
+  user-select: none;
+}
+
+.pixel-btn:hover {
+  filter: brightness(1.15);
+}
+
+.pixel-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: inset -1px -1px 0px 0px rgba(0,0,0,0.5), inset 1px 1px 0px 0px rgba(255,255,255,0.2), 1px 1px 0px 0px #000;
+}
+
+.pixel-btn-primary {
+  background-color: var(--o2-vivid-green);
+  color: #0b0e14;
+  font-weight: bold;
+}
+
+.pixel-btn-dark {
+  background-color: #1a2333;
+  color: #e2e8f0;
+  border-color: #2e3d59;
+}
+
+.pixel-btn-gold {
+  background-color: var(--retro-gold);
+  color: #0b0e14;
+}
+
+.pixel-btn-red {
+  background-color: var(--retro-red);
+  color: #fff;
+}

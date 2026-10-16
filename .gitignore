@@ -42,3 +42,12 @@ htmlcov/
 *.swp
 *.swo
 .DS_Store
+
+# Node / Nx / Frontend
+node_modules/
+.nx/
+.nx/cache/
+dist/
+build/
+.turbo/
+*.local

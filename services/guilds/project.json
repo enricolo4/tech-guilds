@@ -1,0 +1,14 @@
+{
+  "name": "guilds",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "services/guilds",
+  "targets": {
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "TESTING=true poetry run pytest services/guilds/tests -v"
+      }
+    }
+  }
+}
