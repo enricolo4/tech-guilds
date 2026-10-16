@@ -22,12 +22,12 @@ from services.guilds.primary.rest_api.dependencies.container import get_sync_her
 from services.gamification.primary.nats_consumer.hero_registered_consumer import HeroRegisteredConsumer as GamificationConsumer
 from services.gamification.primary.rest_api.dependencies.container import get_in_memory_container
 
-# Dashboard router from monolithic primary for backward compatibility
-from primary.rest_api.routers.dashboard import router as dashboard_router
+# Dashboard router local do Gateway
+from services.gateway.routers.dashboard import router as dashboard_router
 
 logger = logging.getLogger("gateway")
 
-WEB_DASHBOARD_DIR = Path(__file__).resolve().parent.parent.parent / "primary" / "web_dashboard"
+WEB_DASHBOARD_DIR = Path(__file__).resolve().parent / "web_dashboard"
 
 
 @asynccontextmanager

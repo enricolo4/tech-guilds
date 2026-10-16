@@ -1,16 +1,27 @@
+"""Router do Retro RPG Squad Dashboard no API Gateway.
+
+Serve a interface gráfica retrô em pixel art e os endpoints de agregação
+de dados (guilda, heróis, mini-boss arena, épico e armory/shop).
+"""
+
 from pathlib import Path
 from uuid import UUID
 from typing import Dict, Any, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse
 
-from tech_guilds.domain.model.guild import Guild
-from tech_guilds.domain.model.hero import HeroClass
-from ..dependencies.container import DependencyContainer, get_container
+from services.guilds.primary.rest_api.dependencies.container import (
+    get_container as get_guilds_container,
+    DependencyContainer as GuildsContainer,
+)
+from services.gamification.primary.rest_api.dependencies.container import (
+    get_in_memory_container as get_gamification_container,
+    GamificationContainer,
+)
 
 router = APIRouter(prefix="/dashboard", tags=["RPG Dashboard"])
 
-WEB_DASHBOARD_DIR = Path(__file__).resolve().parent.parent.parent / "web_dashboard"
+WEB_DASHBOARD_DIR = Path(__file__).resolve().parent.parent / "web_dashboard"
 INDEX_HTML_PATH = WEB_DASHBOARD_DIR / "index.html"
 
 DEFAULT_SHOP_ITEMS = [
@@ -148,213 +159,243 @@ def _get_demo_payload() -> Dict[str, Any]:
             },
             {
                 "id": "00000000-0000-0000-0000-000000000103",
-                "name": "Valkyrie SRE",
-                "email": "valkyrie@techguilds.io",
+                "name": "Legolas QA",
+                "email": "legolas@techguilds.io",
+                "hero_class": "RANGER",
+                "hero_class_label": "Ranger (QA)",
+                "level": 3,
+                "experience": 150,
+                "experience_to_next_level": 300,
+                "health": 95,
+                "max_health": 100,
+                "health_percent": 95.0,
+                "mana": 60,
+                "max_mana": 70,
+                "gold": 190,
+                "stats": {
+                    "strength": 12,
+                    "intelligence": 16,
+                    "constitution": 14,
+                    "perception": 24
+                },
+                "equipped_items": {
+                    "weapon": "Bow of Cypress End-to-End",
+                    "armor": "Tunic of Edge Cases",
+                    "accessory": "Quiver of Assertions"
+                },
+                "status": "TESTING",
+                "avatar_url": "https://api.dicebear.com/7.x/pixel-art/svg?seed=Legolas"
+            },
+            {
+                "id": "00000000-0000-0000-0000-000000000104",
+                "name": "Uther DevOps",
+                "email": "uther@techguilds.io",
                 "hero_class": "PALADIN",
                 "hero_class_label": "Paladin (DevOps)",
-                "level": 6,
-                "experience": 310,
-                "experience_to_next_level": 550,
+                "level": 4,
+                "experience": 280,
+                "experience_to_next_level": 400,
                 "health": 160,
                 "max_health": 160,
                 "health_percent": 100.0,
                 "mana": 75,
                 "max_mana": 80,
-                "gold": 450,
+                "gold": 410,
                 "stats": {
-                    "strength": 15,
-                    "intelligence": 16,
-                    "constitution": 28,
-                    "perception": 14
+                    "strength": 18,
+                    "intelligence": 14,
+                    "constitution": 24,
+                    "perception": 12
                 },
                 "equipped_items": {
-                    "weapon": "Hammer of Kubernetes",
-                    "armor": "Aegis of 99.99% Uptime",
-                    "accessory": "Helm of Prometheus"
+                    "weapon": "Hammer of Kubernetes Clusters",
+                    "armor": "Aegis of Zero Downtime",
+                    "accessory": "Talisman of CI/CD"
                 },
-                "status": "ON-CALL",
-                "avatar_url": "https://api.dicebear.com/7.x/pixel-art/svg?seed=Valkyrie"
-            },
-            {
-                "id": "00000000-0000-0000-0000-000000000104",
-                "name": "Hawkeye QA",
-                "email": "hawkeye@techguilds.io",
-                "hero_class": "RANGER",
-                "hero_class_label": "Ranger (QA)",
-                "level": 4,
-                "experience": 150,
-                "experience_to_next_level": 380,
-                "health": 110,
-                "max_health": 110,
-                "health_percent": 100.0,
-                "mana": 60,
-                "max_mana": 70,
-                "gold": 210,
-                "stats": {
-                    "strength": 12,
-                    "intelligence": 15,
-                    "constitution": 14,
-                    "perception": 26
-                },
-                "equipped_items": {
-                    "weapon": "Crossbow of Edge Cases",
-                    "armor": "Cloak of Cypress",
-                    "accessory": "Scope of Jest"
-                },
-                "status": "REVIEWING",
-                "avatar_url": "https://api.dicebear.com/7.x/pixel-art/svg?seed=Hawkeye"
+                "status": "DEPLOYING",
+                "avatar_url": "https://api.dicebear.com/7.x/pixel-art/svg?seed=Uther"
             }
         ],
         "active_boss": {
             "id": "00000000-0000-0000-0000-000000000201",
-            "external_id": "BUG-404",
-            "title": "Memory Leak Hydra of Production",
+            "external_id": "BUG-904",
+            "title": "Lord Memory Leak: Zombie Threads in Production",
             "severity": "CRITICAL",
-            "max_health": 400,
-            "current_health": 260,
-            "health_percent": 65.0,
+            "max_health": 250,
+            "current_health": 85,
+            "health_percent": 34.0,
             "is_defeated": False,
-            "bounty_hero_xp": 200,
-            "bounty_guild_xp": 400,
-            "bounty_gold": 130,
+            "bounty_hero_xp": 180,
+            "bounty_guild_xp": 350,
+            "bounty_gold": 220,
             "avatar": "👾"
         },
         "active_adventure": {
             "id": "00000000-0000-0000-0000-000000000301",
-            "external_id": "EPIC-90",
-            "title": "Project Chronos: Multi-Cloud SSO Migration",
+            "external_id": "EPIC-42",
+            "title": "Sprint 34: Enterprise Multi-Region Migration",
             "total_quests": 12,
             "completed_quests": 8,
             "progress_percentage": 66.7,
             "is_completed": False,
-            "reward_guild_xp": 1200,
+            "reward_guild_xp": 800,
             "reward_guild_gold": 500
         },
         "quests": [
             {
                 "id": "00000000-0000-0000-0000-000000000401",
-                "external_id": "LIN-101",
-                "external_source": "linear",
-                "title": "Provisionar cluster multi-region no EKS",
+                "external_id": "TG-101",
+                "external_source": "LINEAR",
+                "title": "Implementar rate limiter resiliente com Redis Sentinel",
                 "status": "DONE",
                 "difficulty": "HARD",
-                "quest_type": "CHORE",
-                "assignee_name": "Valkyrie SRE",
+                "quest_type": "FEATURE",
+                "assignee_name": "Conan The Backend",
                 "is_pair_programming": True,
                 "rewards": {
-                    "hero_xp": 156,
-                    "hero_gold": 52,
-                    "guild_xp": 60,
-                    "guild_gold": 20
+                    "hero_xp": 90,
+                    "hero_gold": 60,
+                    "guild_xp": 120,
+                    "guild_gold": 80
                 }
             },
             {
                 "id": "00000000-0000-0000-0000-000000000402",
-                "external_id": "LIN-102",
-                "external_source": "linear",
-                "title": "Implementar handshake OIDC com Okta e Azure AD",
-                "status": "IN_REVIEW",
+                "external_id": "TG-102",
+                "external_source": "GITHUB",
+                "title": "Migrar componentes de checkout para Tailwind e WebSockets",
+                "status": "IN_PROGRESS",
                 "difficulty": "MEDIUM",
                 "quest_type": "FEATURE",
-                "assignee_name": "Conan The Backend",
+                "assignee_name": "Gandalf Dev",
                 "is_pair_programming": False,
                 "rewards": {
-                    "hero_xp": 75,
-                    "hero_gold": 25,
-                    "guild_xp": 37,
-                    "guild_gold": 12
+                    "hero_xp": 50,
+                    "hero_gold": 30,
+                    "guild_xp": 70,
+                    "guild_gold": 40
                 }
             },
             {
                 "id": "00000000-0000-0000-0000-000000000403",
-                "external_id": "LIN-103",
-                "external_source": "linear",
-                "title": "Desenvolver Dashboard Retro em Alpine.js",
-                "status": "IN_PROGRESS",
-                "difficulty": "HARD",
-                "quest_type": "FEATURE",
-                "assignee_name": "Gandalf Dev",
+                "external_id": "TG-103",
+                "external_source": "LINEAR",
+                "title": "Configurar suite de testes de integração com Testcontainers",
+                "status": "IN_REVIEW",
+                "difficulty": "MEDIUM",
+                "quest_type": "TEST",
+                "assignee_name": "Legolas QA",
                 "is_pair_programming": True,
                 "rewards": {
-                    "hero_xp": 156,
-                    "hero_gold": 52,
-                    "guild_xp": 60,
-                    "guild_gold": 20
+                    "hero_xp": 60,
+                    "hero_gold": 40,
+                    "guild_xp": 80,
+                    "guild_gold": 50
                 }
             },
             {
                 "id": "00000000-0000-0000-0000-000000000404",
-                "external_id": "LIN-104",
-                "external_source": "linear",
-                "title": "Configurar suite de testes de integração com Testcontainers",
+                "external_id": "TG-104",
+                "external_source": "GITHUB",
+                "title": "Criar pipeline de deploy canary no cluster EKS",
                 "status": "TODO",
-                "difficulty": "MEDIUM",
-                "quest_type": "IMPROVEMENT",
-                "assignee_name": "Hawkeye QA",
+                "difficulty": "EPIC",
+                "quest_type": "DEVOPS",
+                "assignee_name": "Uther DevOps",
                 "is_pair_programming": False,
                 "rewards": {
-                    "hero_xp": 75,
-                    "hero_gold": 25,
-                    "guild_xp": 37,
-                    "guild_gold": 12
+                    "hero_xp": 120,
+                    "hero_gold": 90,
+                    "guild_xp": 180,
+                    "guild_gold": 120
                 }
             }
         ],
         "shop_items": DEFAULT_SHOP_ITEMS,
         "combat_log": [
             {
-                "timestamp": "14:28:10",
-                "message": "Gandalf Dev executed 'Alpine State Reactive Magic'! Mini-boss took 45 damage!",
-                "type": "damage"
+                "timestamp": "10:14:22",
+                "message": "Gandalf Dev lançou 'Script de Automação'! Multiplicador de XP ativo.",
+                "type": "skill"
             },
             {
-                "timestamp": "14:25:30",
-                "message": "Conan The Backend added composite index on Postgres! Query speed +300%.",
-                "type": "defense"
+                "timestamp": "10:28:40",
+                "message": "Conan The Backend desferiu 'Refatoração Brutal' causando 65 de dano no Lord Memory Leak!",
+                "type": "combat"
             },
             {
-                "timestamp": "14:20:00",
-                "message": "Valkyrie SRE resolved 'LIN-101' (+60 Squad XP, +20 Squad Gold)!",
+                "timestamp": "11:05:12",
+                "message": "Uther DevOps ativou 'Escudo de CI/CD' protegendo o esquadrão contra bugs críticos.",
+                "type": "buff"
+            },
+            {
+                "timestamp": "11:42:01",
+                "message": "Quest TG-101 concluída! +120 Guild XP depositados no cofre.",
                 "type": "loot"
-            },
-            {
-                "timestamp": "14:15:12",
-                "message": "Mini-boss 'Memory Leak Hydra' triggered OOM-Killed error!",
-                "type": "boss"
             }
         ]
     }
 
 
-def _class_label(hero_class: HeroClass) -> str:
-    mapping = {
-        HeroClass.WARRIOR_BACKEND: "Warrior (Backend)",
-        HeroClass.MAGE_FRONTEND: "Mage (Frontend)",
-        HeroClass.PALADIN_DEVOPS: "Paladin (DevOps)",
-        HeroClass.RANGER_QA: "Ranger (QA)",
-        HeroClass.TACTICIAN_TL: "Tactician (Tech Lead)",
-        HeroClass.NOVICE: "Novice"
+def _class_label(hero_class: str) -> str:
+    labels = {
+        "WARRIOR_BACKEND": "Warrior (Backend)",
+        "WARRIOR": "Warrior (Backend)",
+        "MAGE_FRONTEND": "Mage (Frontend)",
+        "MAGE": "Mage (Frontend)",
+        "PALADIN_DEVOPS": "Paladin (DevOps)",
+        "PALADIN": "Paladin (DevOps)",
+        "RANGER_QA": "Ranger (QA)",
+        "RANGER": "Ranger (QA)",
+        "TACTICIAN_TL": "Tactician (Tech Lead)",
+        "TACTICIAN": "Tactician (Tech Lead)",
+        "NOVICE": "Novice"
     }
-    return mapping.get(hero_class, hero_class.value)
+    return labels.get(hero_class, "Novice")
 
 
-def _default_gear(hero_class: HeroClass) -> Dict[str, str]:
-    if hero_class == HeroClass.WARRIOR_BACKEND:
-        return {"weapon": "Blade of Postgres Indices", "armor": "Chainmail of ACID", "accessory": "Pendant of Low Latency"}
-    elif hero_class == HeroClass.MAGE_FRONTEND:
-        return {"weapon": "Staff of Tailwind CSS", "armor": "Robe of Pixel Perfection", "accessory": "Ring of Zero Console Errors"}
-    elif hero_class == HeroClass.PALADIN_DEVOPS:
-        return {"weapon": "Hammer of Kubernetes", "armor": "Aegis of 99.99% Uptime", "accessory": "Helm of Prometheus"}
-    elif hero_class == HeroClass.RANGER_QA:
-        return {"weapon": "Crossbow of Edge Cases", "armor": "Cloak of Cypress", "accessory": "Scope of Jest"}
-    elif hero_class == HeroClass.TACTICIAN_TL:
-        return {"weapon": "Scepter of Roadmaps", "armor": "Tunic of Alignment", "accessory": "Orb of 1-on-1s"}
-    return {"weapon": "Standard Keyboard", "armor": "Hoodie of Warmth", "accessory": "Coffee Mug"}
+def _default_gear(hero_class: str) -> Dict[str, str]:
+    if "WARRIOR" in hero_class:
+        return {
+            "weapon": "Blade of Postgres Indices",
+            "armor": "Chainmail of ACID Compliance",
+            "accessory": "Pendant of Low Latency",
+        }
+    elif "MAGE" in hero_class:
+        return {
+            "weapon": "Staff of Tailwind CSS",
+            "armor": "Robe of Pixel Perfection",
+            "accessory": "Ring of Zero React Re-renders",
+        }
+    elif "PALADIN" in hero_class:
+        return {
+            "weapon": "Mace of Kubernetes Orchestration",
+            "armor": "Shield of CI/CD Pipeline",
+            "accessory": "Relic of 99.99% Uptime",
+        }
+    elif "RANGER" in hero_class:
+        return {
+            "weapon": "Bow of Cypress End-to-End",
+            "armor": "Tunic of Edge Case Detection",
+            "accessory": "Quiver of Jest Mocks",
+        }
+    elif "TACTICIAN" in hero_class:
+        return {
+            "weapon": "Tome of Clean Architecture",
+            "armor": "Cloak of Sprint Velocity",
+            "accessory": "Signet Ring of Unblocked PRs",
+        }
+    return {
+        "weapon": "Wooden Keyboard",
+        "armor": "Cotton T-shirt",
+        "accessory": "Plastic ID Badge",
+    }
 
 
 @router.get("", response_class=HTMLResponse)
+@router.get("/", response_class=HTMLResponse)
 async def serve_dashboard():
-    """Entrega a página HTML do Dashboard Retro RPG para Squads de Tecnologia."""
+    """Entrega a página HTML do Retro RPG Squad Dashboard."""
     if not INDEX_HTML_PATH.exists():
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -363,13 +404,31 @@ async def serve_dashboard():
     return HTMLResponse(content=INDEX_HTML_PATH.read_text(encoding="utf-8"))
 
 
+@router.get("/static/css/retro.css")
+async def serve_retro_css():
+    """Serve o arquivo CSS retro para estilização em pixel art."""
+    css_path = WEB_DASHBOARD_DIR / "static" / "css" / "retro.css"
+    if not css_path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Arquivo retro.css não encontrado."
+        )
+    return FileResponse(css_path, media_type="text/css")
+
+
+@router.get("/data/demo")
+async def get_demo_dashboard_data():
+    """Retorna os dados ricos do esquadrão de demonstração para testes instantâneos da UI."""
+    return _get_demo_payload()
+
+
 @router.get("/data/{guild_id}")
 async def get_dashboard_data(
     guild_id: str,
-    container: DependencyContainer = Depends(get_container),
+    guilds_container: GuildsContainer = Depends(get_guilds_container),
+    gamification_container: GamificationContainer = Depends(get_gamification_container),
 ):
-    """Retorna o payload completo do dashboard (guilda, heróis, boss, épico, quests, armory) em uma única chamada rápida."""
-    # Suporte para rota de demonstração / testes rápidos
+    """Retorna o payload completo do dashboard (guilda, membros, quests, shop) em uma única chamada."""
     if guild_id.lower() == "demo":
         return _get_demo_payload()
 
@@ -381,57 +440,43 @@ async def get_dashboard_data(
             detail="ID da guilda deve ser um UUID válido ou 'demo'."
         )
 
-    guild = await container.guild_repo.get_by_id(guild_uuid)
+    guild = await guilds_container.guild_repository.get_by_id(guild_uuid)
     if guild is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Guilda não encontrada."
         )
 
-    # Coleta de dados agregados
-    heroes = await container.hero_repo.list_by_guild(guild.id)
-    active_adv = await container.adventure_repo.get_active_by_guild(guild.id)
-    active_bosses = await container.boss_repo.list_active_by_guild(guild.id)
-    quests = await container.quest_repo.list_by_guild(guild.id)
-
-    if not quests and active_adv:
-        quests = await container.quest_repo.list_by_adventure(active_adv.id)
-
-    # Mapeamento dos heróis
-    hero_map = {h.id: h for h in heroes}
+    # Membros da guilda
+    members = await guilds_container.member_repository.list_by_guild(guild.id)
     heroes_data = []
-    for h in heroes:
-        h_max = max(1, h.max_health)
+    for m in members:
         heroes_data.append({
-            "id": str(h.id),
-            "name": h.name,
-            "email": h.email,
-            "hero_class": h.hero_class.value,
-            "hero_class_label": _class_label(h.hero_class),
-            "level": h.level,
-            "experience": h.experience,
-            "experience_to_next_level": h.experience_to_next_level,
-            "health": h.health,
-            "max_health": h.max_health,
-            "health_percent": round((h.health / h_max) * 100.0, 1),
-            "mana": 80,
-            "max_mana": 100,
-            "gold": h.gold,
-            "stats": {
-                "strength": h.stats.strength,
-                "intelligence": h.stats.intelligence,
-                "constitution": h.stats.constitution,
-                "perception": h.stats.perception,
-            },
-            "equipped_items": _default_gear(h.hero_class),
+            "id": str(m.hero_id),
+            "name": m.name,
+            "email": m.email,
+            "hero_class": m.hero_class,
+            "hero_class_label": _class_label(m.hero_class),
+            "level": 1,
+            "experience": 0,
+            "experience_to_next_level": 100,
+            "health": 100,
+            "max_health": 100,
+            "health_percent": 100.0,
+            "mana": 50,
+            "max_mana": 50,
+            "gold": 0,
+            "stats": {"strength": 10, "intelligence": 10, "constitution": 10, "perception": 10},
+            "equipped_items": _default_gear(m.hero_class),
             "status": "CODING",
-            "avatar_url": h.avatar_url or f"https://api.dicebear.com/7.x/pixel-art/svg?seed={h.name}"
+            "avatar_url": f"https://api.dicebear.com/7.x/pixel-art/svg?seed={m.name}"
         })
 
-    # Mini-Boss ativo
+    # Bosses e Quests
+    bosses = await gamification_container.mini_boss_repo.list_active()
     active_boss_data = None
-    if active_bosses:
-        boss = active_bosses[0]
+    if bosses:
+        boss = bosses[0]
         b_max = max(1, boss.max_health)
         active_boss_data = {
             "id": str(boss.id),
@@ -448,46 +493,27 @@ async def get_dashboard_data(
             "avatar": "👾" if boss.severity.value in ("CRITICAL", "HIGH") else "🐛",
         }
 
-    # Aventura / Épico ativo
-    active_adv_data = None
-    if active_adv:
-        active_adv_data = {
-            "id": str(active_adv.id),
-            "external_id": active_adv.external_id,
-            "title": active_adv.title,
-            "total_quests": active_adv.total_quests,
-            "completed_quests": active_adv.completed_quests,
-            "progress_percentage": round(active_adv.progress_percentage, 1),
-            "is_completed": active_adv.is_completed,
-            "reward_guild_xp": active_adv.reward_guild_xp,
-            "reward_guild_gold": active_adv.reward_guild_gold,
-        }
-
-    # Quests / Tarefas do Board
+    quests = await gamification_container.quest_repo.list_active()
     quests_data = []
     for q in quests:
-        reward = q.calculate_rewards()
-        assignee_name = hero_map[q.assignee_hero_id].name if q.assignee_hero_id in hero_map else None
         quests_data.append({
             "id": str(q.id),
             "external_id": q.external_id,
-            "external_source": q.external_source,
+            "external_source": "SYSTEM",
             "title": q.title,
             "status": q.status.value,
             "difficulty": q.difficulty.value,
-            "quest_type": q.quest_type.value,
-            "assignee_hero_id": str(q.assignee_hero_id) if q.assignee_hero_id else None,
-            "assignee_name": assignee_name,
-            "is_pair_programming": q.is_pair_programming,
+            "quest_type": "TASK",
+            "assignee_name": None,
+            "is_pair_programming": False,
             "rewards": {
-                "hero_xp": reward.hero_xp,
-                "hero_gold": reward.hero_gold,
-                "guild_xp": reward.guild_xp,
-                "guild_gold": reward.guild_gold,
+                "hero_xp": q.reward.hero_xp,
+                "hero_gold": q.reward.hero_gold,
+                "guild_xp": q.reward.guild_xp,
+                "guild_gold": q.reward.guild_gold,
             }
         })
 
-    # Cálculo da porcentagem de EXP da guilda
     g_exp_next = max(1, guild.experience_to_next_level)
     exp_percent = round(min(100.0, (guild.experience / g_exp_next) * 100.0), 1)
 
@@ -501,13 +527,13 @@ async def get_dashboard_data(
             "experience_to_next_level": guild.experience_to_next_level,
             "experience_percent": exp_percent,
             "treasury_gold": guild.treasury_gold,
-            "active_members_count": len(heroes),
-            "active_adventure_title": active_adv.title if active_adv else None,
-            "active_boss_count": len(active_bosses),
+            "active_members_count": len(members),
+            "active_adventure_title": None,
+            "active_boss_count": len(bosses),
         },
         "heroes": heroes_data,
         "active_boss": active_boss_data,
-        "active_adventure": active_adv_data,
+        "active_adventure": None,
         "quests": quests_data,
         "shop_items": DEFAULT_SHOP_ITEMS,
         "combat_log": [
