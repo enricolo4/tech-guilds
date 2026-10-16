@@ -115,7 +115,7 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
   const [heroName, setHeroName] = useState('');
   const [heroEmail, setHeroEmail] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string>(
-    'https://api.dicebear.com/7.x/pixel-art/svg?seed=Gandalf'
+    'https://api.dicebear.com/7.x/adventurer/svg?seed=Arthur'
   );
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
   const [hasManuallySelectedAvatar, setHasManuallySelectedAvatar] = useState(false);
@@ -171,7 +171,7 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
           setAvatarUrl(parsed.user.avatar_url);
           setHasManuallySelectedAvatar(true);
         } else if (parsed.user.name) {
-          setAvatarUrl(`https://api.dicebear.com/7.x/pixel-art/svg?seed=${encodeURIComponent(parsed.user.name)}`);
+          setAvatarUrl(`https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(parsed.user.name)}`);
         }
 
         // Checa se já tem herói cadastrado
@@ -197,7 +197,7 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
   const handleNameChange = (name: string) => {
     setHeroName(name);
     if (name.trim() && !hasManuallySelectedAvatar) {
-      setAvatarUrl(`https://api.dicebear.com/7.x/pixel-art/svg?seed=${encodeURIComponent(name.trim())}`);
+      setAvatarUrl(`https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(name.trim())}`);
     }
   };
 
@@ -285,7 +285,7 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
         setAvatarUrl(session.user.avatar_url);
         setHasManuallySelectedAvatar(true);
       } else if (session.user.name) {
-        setAvatarUrl(`https://api.dicebear.com/7.x/pixel-art/svg?seed=${encodeURIComponent(session.user.name)}`);
+        setAvatarUrl(`https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(session.user.name)}`);
       }
       setSsoProvider('direct');
       localStorage.setItem('tech_guilds_auth', JSON.stringify(session));
@@ -332,7 +332,7 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
         setAvatarUrl(session.user.avatar_url);
         setHasManuallySelectedAvatar(true);
       } else if (session.user.name) {
-        setAvatarUrl(`https://api.dicebear.com/7.x/pixel-art/svg?seed=${encodeURIComponent(session.user.name)}`);
+        setAvatarUrl(`https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(session.user.name)}`);
       }
 
       // Persiste sessão

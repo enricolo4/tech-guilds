@@ -91,7 +91,7 @@ class AuthenticateSSOUseCase(AuthenticateUserPort):
             name=name,
             provider="direct",
             provider_user_id=user_id,
-            avatar_url=command.avatar_url or f"https://api.dicebear.com/7.x/pixel-art/svg?seed={name}",
+            avatar_url=command.avatar_url or f"https://api.dicebear.com/7.x/adventurer/svg?seed={name}",
         )
 
         now = datetime.now(timezone.utc)
@@ -150,7 +150,7 @@ class AuthenticateSSOUseCase(AuthenticateUserPort):
             name=name,
             provider="direct",
             provider_user_id=user_id,
-            avatar_url=f"https://api.dicebear.com/7.x/pixel-art/svg?seed={name}",
+            avatar_url=f"https://api.dicebear.com/7.x/adventurer/svg?seed={name}",
         )
 
         payload = TokenPayload(

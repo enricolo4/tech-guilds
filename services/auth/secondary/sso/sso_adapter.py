@@ -32,7 +32,7 @@ class MultiProviderSSOAdapter(SSOIdentityPort):
             return UserClaims(
                 email=email,
                 name=f"{name_part} ({provider_normalized.title()})",
-                avatar_url=f"https://api.dicebear.com/7.x/pixel-art/svg?seed={name_part}",
+                avatar_url=f"https://api.dicebear.com/7.x/adventurer/svg?seed={name_part}",
                 provider=provider_normalized,
                 provider_user_id=f"dev_{provider_normalized}_{clean_token}",
             )

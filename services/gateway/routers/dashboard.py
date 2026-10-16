@@ -515,7 +515,7 @@ async def get_dashboard_data(
             "stats": h_stats,
             "equipped_items": _default_gear(m.hero_class),
             "status": "CODING",
-            "avatar_url": m.avatar_url or f"https://api.dicebear.com/7.x/pixel-art/svg?seed={m.name}"
+            "avatar_url": m.avatar_url or f"https://api.dicebear.com/7.x/adventurer/svg?seed={m.name}"
         })
 
     # Bosses e Quests

@@ -5,126 +5,198 @@ export interface AvatarPreset {
   id: string;
   name: string;
   title: string;
-  category: 'pixel-art' | 'bottts' | 'adventurer';
+  category: 'adventurer' | 'personas' | 'bottts' | 'pixel-art';
   url: string;
 }
 
 export const AVATAR_PRESETS: AvatarPreset[] = [
-  // Pixel Art 16-Bit RPG
+  // 1. ILUSTRAÇÕES MODERNAS RPG (Estilo Adventurer - NÃO 8-bit)
   {
-    id: 'pixel-gandalf',
-    name: 'Gandalf',
-    title: 'Arquimago Tech',
-    category: 'pixel-art',
-    url: 'https://api.dicebear.com/7.x/pixel-art/svg?seed=Gandalf',
+    id: 'adv-arthur',
+    name: 'Arthur',
+    title: 'Cavaleiro Backend & Hexagonal',
+    category: 'adventurer',
+    url: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Arthur',
   },
   {
-    id: 'pixel-conan',
-    name: 'Conan',
-    title: 'Bárbaro de Produção',
-    category: 'pixel-art',
-    url: 'https://api.dicebear.com/7.x/pixel-art/svg?seed=Conan',
+    id: 'adv-morgana',
+    name: 'Morgana',
+    title: 'Feiticeira Frontend & UI',
+    category: 'adventurer',
+    url: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Morgana',
   },
   {
-    id: 'pixel-legolas',
-    name: 'Legolas',
-    title: 'Sniper de Qualidade (QA)',
-    category: 'pixel-art',
-    url: 'https://api.dicebear.com/7.x/pixel-art/svg?seed=Legolas',
+    id: 'adv-lyra',
+    name: 'Lyra',
+    title: 'Exploradora Cross-Platform',
+    category: 'adventurer',
+    url: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Lyra',
   },
   {
-    id: 'pixel-uther',
-    name: 'Uther',
-    title: 'Paladino Tech Lead',
-    category: 'pixel-art',
-    url: 'https://api.dicebear.com/7.x/pixel-art/svg?seed=Uther',
+    id: 'adv-gideon',
+    name: 'Gideon',
+    title: 'Guardião de Transações ACID',
+    category: 'adventurer',
+    url: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Gideon',
   },
   {
-    id: 'pixel-ada',
-    name: 'Ada',
-    title: 'Pioneira dos Algoritmos',
-    category: 'pixel-art',
-    url: 'https://api.dicebear.com/7.x/pixel-art/svg?seed=Ada',
+    id: 'adv-rowan',
+    name: 'Rowan',
+    title: 'Navegador Multi-Cloud',
+    category: 'adventurer',
+    url: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Rowan',
   },
   {
-    id: 'pixel-trinity',
-    name: 'Trinity',
-    title: 'Hacker de Infraestrutura',
-    category: 'pixel-art',
-    url: 'https://api.dicebear.com/7.x/pixel-art/svg?seed=Trinity',
+    id: 'adv-diana',
+    name: 'Diana',
+    title: 'Caçadora de Bugs Críticos',
+    category: 'adventurer',
+    url: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Diana',
   },
   {
-    id: 'pixel-neo',
-    name: 'Neo',
-    title: 'O Escolhido dos Dados',
-    category: 'pixel-art',
-    url: 'https://api.dicebear.com/7.x/pixel-art/svg?seed=Neo',
+    id: 'adv-finn',
+    name: 'Finn',
+    title: 'Arquiteto Clean Code',
+    category: 'adventurer',
+    url: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Finn',
   },
   {
-    id: 'pixel-turing',
-    name: 'Turing',
-    title: 'Decifrador de Código',
-    category: 'pixel-art',
-    url: 'https://api.dicebear.com/7.x/pixel-art/svg?seed=Turing',
+    id: 'adv-sage',
+    name: 'Sage',
+    title: 'Guru de Engenharia & SRE',
+    category: 'adventurer',
+    url: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Sage',
   },
   {
-    id: 'pixel-valkyrie',
-    name: 'Valkyrie',
-    title: 'Guardiã da Resiliência',
-    category: 'pixel-art',
-    url: 'https://api.dicebear.com/7.x/pixel-art/svg?seed=Valkyrie',
+    id: 'adv-elena',
+    name: 'Elena',
+    title: 'Maga de Microsserviços',
+    category: 'adventurer',
+    url: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Elena',
   },
   {
-    id: 'pixel-shadow',
-    name: 'Shadow',
-    title: 'Pentester Furtivo',
-    category: 'pixel-art',
-    url: 'https://api.dicebear.com/7.x/pixel-art/svg?seed=Shadow',
+    id: 'adv-zane',
+    name: 'Zane',
+    title: 'Ninja de Infraestrutura',
+    category: 'adventurer',
+    url: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Zane',
   },
   {
-    id: 'pixel-glitch',
-    name: 'Glitch',
-    title: 'Caçador de Heisenbugs',
-    category: 'pixel-art',
-    url: 'https://api.dicebear.com/7.x/pixel-art/svg?seed=Glitch',
+    id: 'adv-aria',
+    name: 'Aria',
+    title: 'Paladina de Testes Automatizados',
+    category: 'adventurer',
+    url: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Aria',
   },
   {
-    id: 'pixel-athena',
-    name: 'Athena',
-    title: 'Estrategista de Arquitetura',
-    category: 'pixel-art',
-    url: 'https://api.dicebear.com/7.x/pixel-art/svg?seed=Athena',
+    id: 'adv-lucas',
+    name: 'Lucas',
+    title: 'Guerreiro de DevOps & CI/CD',
+    category: 'adventurer',
+    url: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Lucas',
   },
   {
-    id: 'pixel-phoenix',
-    name: 'Phoenix',
-    title: 'Engenheiro de Incidentes',
-    category: 'pixel-art',
-    url: 'https://api.dicebear.com/7.x/pixel-art/svg?seed=Phoenix',
+    id: 'adv-maya',
+    name: 'Maya',
+    title: 'Alquimista de Dados & Analytics',
+    category: 'adventurer',
+    url: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Maya',
   },
   {
-    id: 'pixel-ragnar',
-    name: 'Ragnar',
-    title: 'Viking de Deploy',
-    category: 'pixel-art',
-    url: 'https://api.dicebear.com/7.x/pixel-art/svg?seed=Ragnar',
+    id: 'adv-orion',
+    name: 'Orion',
+    title: 'Estrategista Tech Lead',
+    category: 'adventurer',
+    url: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Orion',
   },
   {
-    id: 'pixel-kira',
-    name: 'Kira',
-    title: 'Feiticeira dos Microsserviços',
-    category: 'pixel-art',
-    url: 'https://api.dicebear.com/7.x/pixel-art/svg?seed=Kira',
+    id: 'adv-chloe',
+    name: 'Chloe',
+    title: 'Mestre de Design System & UX',
+    category: 'adventurer',
+    url: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Chloe',
   },
   {
-    id: 'pixel-thor',
-    name: 'Thor',
-    title: 'Destruidor de Monólitos',
-    category: 'pixel-art',
-    url: 'https://api.dicebear.com/7.x/pixel-art/svg?seed=Thor',
+    id: 'adv-caleb',
+    name: 'Caleb',
+    title: 'Guardião de Segurança SecOps',
+    category: 'adventurer',
+    url: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Caleb',
+  },
+  {
+    id: 'adv-nova',
+    name: 'Nova',
+    title: 'Engenheira de Alta Performance',
+    category: 'adventurer',
+    url: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Nova',
+  },
+  {
+    id: 'adv-sora',
+    name: 'Sora',
+    title: 'Arquiteto de Mensageria NATS',
+    category: 'adventurer',
+    url: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Sora',
+  },
+  {
+    id: 'adv-vesper',
+    name: 'Vesper',
+    title: 'Hacker de Resiliência',
+    category: 'adventurer',
+    url: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Vesper',
+  },
+  {
+    id: 'adv-amara',
+    name: 'Amara',
+    title: 'Campeã de Orquestração Kubernetes',
+    category: 'adventurer',
+    url: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Amara',
   },
 
-  // Mechs & Ciborgues (Bottts)
+  // 2. PERSONAS ILUSTRADAS CLEAN (Estilo Personas)
+  {
+    id: 'per-felix',
+    name: 'Felix',
+    title: 'Tech Evangelist',
+    category: 'personas',
+    url: 'https://api.dicebear.com/7.x/personas/svg?seed=Felix',
+  },
+  {
+    id: 'per-bailey',
+    name: 'Bailey',
+    title: 'Product Engineer',
+    category: 'personas',
+    url: 'https://api.dicebear.com/7.x/personas/svg?seed=Bailey',
+  },
+  {
+    id: 'per-alex',
+    name: 'Alex',
+    title: 'Full Stack Ninja',
+    category: 'personas',
+    url: 'https://api.dicebear.com/7.x/personas/svg?seed=Alex',
+  },
+  {
+    id: 'per-taylor',
+    name: 'Taylor',
+    title: 'Cloud Architect',
+    category: 'personas',
+    url: 'https://api.dicebear.com/7.x/personas/svg?seed=Taylor',
+  },
+  {
+    id: 'per-sam',
+    name: 'Sam',
+    title: 'QA Automation Lead',
+    category: 'personas',
+    url: 'https://api.dicebear.com/7.x/personas/svg?seed=Sam',
+  },
+  {
+    id: 'per-jordan',
+    name: 'Jordan',
+    title: 'Staff Security Engineer',
+    category: 'personas',
+    url: 'https://api.dicebear.com/7.x/personas/svg?seed=Jordan',
+  },
+
+  // 3. MECHS & ROBÔS (Estilo Bottts)
   {
     id: 'bot-sentinel',
     name: 'Sentinel-01',
@@ -168,48 +240,34 @@ export const AVATAR_PRESETS: AvatarPreset[] = [
     url: 'https://api.dicebear.com/7.x/bottts/svg?seed=Vector',
   },
 
-  // Aventureiros Fantasia (Adventurer)
+  // 4. RETRÔ 16-BIT (Pixel Art - Secundário)
   {
-    id: 'adv-morgana',
-    name: 'Morgana',
-    title: 'Feiticeira Frontend & UI',
-    category: 'adventurer',
-    url: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Morgana',
+    id: 'pixel-gandalf',
+    name: 'Gandalf',
+    title: 'Arquimago Retrô',
+    category: 'pixel-art',
+    url: 'https://api.dicebear.com/7.x/pixel-art/svg?seed=Gandalf',
   },
   {
-    id: 'adv-arthur',
-    name: 'Arthur',
-    title: 'Cavaleiro Backend & Hexagonal',
-    category: 'adventurer',
-    url: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Arthur',
+    id: 'pixel-conan',
+    name: 'Conan',
+    title: 'Bárbaro Retrô',
+    category: 'pixel-art',
+    url: 'https://api.dicebear.com/7.x/pixel-art/svg?seed=Conan',
   },
   {
-    id: 'adv-lyra',
-    name: 'Lyra',
-    title: 'Exploradora Cross-Platform',
-    category: 'adventurer',
-    url: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Lyra',
+    id: 'pixel-ada',
+    name: 'Ada',
+    title: 'Pioneira Retrô',
+    category: 'pixel-art',
+    url: 'https://api.dicebear.com/7.x/pixel-art/svg?seed=Ada',
   },
   {
-    id: 'adv-gideon',
-    name: 'Gideon',
-    title: 'Guardião de Transações ACID',
-    category: 'adventurer',
-    url: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Gideon',
-  },
-  {
-    id: 'adv-rowan',
-    name: 'Rowan',
-    title: 'Navegador Multi-Cloud',
-    category: 'adventurer',
-    url: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Rowan',
-  },
-  {
-    id: 'adv-diana',
-    name: 'Diana',
-    title: 'Caçadora de Bugs Críticos',
-    category: 'adventurer',
-    url: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Diana',
+    id: 'pixel-neo',
+    name: 'Neo',
+    title: 'O Escolhido Retrô',
+    category: 'pixel-art',
+    url: 'https://api.dicebear.com/7.x/pixel-art/svg?seed=Neo',
   },
 ];
 
@@ -226,7 +284,8 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
   currentAvatarUrl,
   onSelectAvatar,
 }) => {
-  const [selectedCategory, setSelectedCategory] = useState<'all' | 'pixel-art' | 'bottts' | 'adventurer'>('all');
+  // Padrão: Coleção Adventurer (Ilustração moderna, NÃO 8-bit)
+  const [selectedCategory, setSelectedCategory] = useState<'all' | 'adventurer' | 'personas' | 'bottts' | 'pixel-art'>('adventurer');
   const [searchQuery, setSearchQuery] = useState('');
   const [customSeed, setCustomSeed] = useState('');
   const [tempSelectedUrl, setTempSelectedUrl] = useState(currentAvatarUrl);
@@ -243,14 +302,17 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
 
   const handleApplyCustomSeed = () => {
     if (!customSeed.trim()) return;
-    const style = selectedCategory === 'all' ? 'pixel-art' : selectedCategory;
+    const style = selectedCategory === 'all' || selectedCategory === 'pixel-art' ? 'adventurer' : selectedCategory;
     const url = `https://api.dicebear.com/7.x/${style}/svg?seed=${encodeURIComponent(customSeed.trim())}`;
     setTempSelectedUrl(url);
   };
 
   const handleRandomize = () => {
-    const randomIndex = Math.floor(Math.random() * AVATAR_PRESETS.length);
-    const picked = AVATAR_PRESETS[randomIndex];
+    // Dá prioridade aos aventureiros modernos ilustrados
+    const pool = selectedCategory === 'all' ? AVATAR_PRESETS.filter(p => p.category === 'adventurer') : filteredPresets;
+    const targetPool = pool.length > 0 ? pool : AVATAR_PRESETS;
+    const randomIndex = Math.floor(Math.random() * targetPool.length);
+    const picked = targetPool[randomIndex];
     setTempSelectedUrl(picked.url);
   };
 
@@ -267,11 +329,11 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
           <div className="flex items-center gap-2">
             <Palette className="w-5 h-5 text-o2-green" />
             <div>
-              <h3 className="font-pixel text-xs sm:text-sm text-white">
-                GALERIA DE VISUAIS & AVATARES RPG
+              <h3 className="font-pixel text-xs sm:text-sm text-white flex items-center gap-2">
+                <span>🎨</span> GALERIA DE AVATARES RPG ILUSTRADOS
               </h3>
               <p className="text-[11px] font-mono text-gray-400">
-                Selecione o visual do seu herói na grade abaixo ou gere uma variação única.
+                Selecione seu herói com traço moderno e expressivo. Clique em qualquer card para aplicar.
               </p>
             </div>
           </div>
@@ -290,6 +352,39 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
+              onClick={() => setSelectedCategory('adventurer')}
+              className={`px-3 py-1.5 text-xs font-pixel rounded transition flex items-center gap-1.5 ${
+                selectedCategory === 'adventurer'
+                  ? 'bg-o2-green text-black font-bold shadow-md'
+                  : 'bg-retro-dark border border-retro-border text-gray-300 hover:border-gray-500'
+              }`}
+            >
+              <span>🏹</span> AVENTUREIROS RPG ({AVATAR_PRESETS.filter(p => p.category === 'adventurer').length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedCategory('personas')}
+              className={`px-3 py-1.5 text-xs font-pixel rounded transition flex items-center gap-1.5 ${
+                selectedCategory === 'personas'
+                  ? 'bg-o2-green text-black font-bold shadow-md'
+                  : 'bg-retro-dark border border-retro-border text-gray-300 hover:border-gray-500'
+              }`}
+            >
+              <span>✨</span> PERSONAS CLEAN ({AVATAR_PRESETS.filter(p => p.category === 'personas').length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedCategory('bottts')}
+              className={`px-3 py-1.5 text-xs font-pixel rounded transition flex items-center gap-1.5 ${
+                selectedCategory === 'bottts'
+                  ? 'bg-o2-green text-black font-bold shadow-md'
+                  : 'bg-retro-dark border border-retro-border text-gray-300 hover:border-gray-500'
+              }`}
+            >
+              <span>🤖</span> MECHS & ROBÔS ({AVATAR_PRESETS.filter(p => p.category === 'bottts').length})
+            </button>
+            <button
+              type="button"
               onClick={() => setSelectedCategory('all')}
               className={`px-3 py-1.5 text-xs font-pixel rounded transition ${
                 selectedCategory === 'all'
@@ -305,32 +400,10 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
               className={`px-3 py-1.5 text-xs font-pixel rounded transition flex items-center gap-1.5 ${
                 selectedCategory === 'pixel-art'
                   ? 'bg-o2-green text-black font-bold shadow-md'
-                  : 'bg-retro-dark border border-retro-border text-gray-300 hover:border-gray-500'
+                  : 'bg-retro-dark border border-retro-border text-gray-400 hover:border-gray-500'
               }`}
             >
-              <span>👾</span> PIXEL ART (16-BIT)
-            </button>
-            <button
-              type="button"
-              onClick={() => setSelectedCategory('bottts')}
-              className={`px-3 py-1.5 text-xs font-pixel rounded transition flex items-center gap-1.5 ${
-                selectedCategory === 'bottts'
-                  ? 'bg-o2-green text-black font-bold shadow-md'
-                  : 'bg-retro-dark border border-retro-border text-gray-300 hover:border-gray-500'
-              }`}
-            >
-              <span>🤖</span> MECHS & CIBORGUES
-            </button>
-            <button
-              type="button"
-              onClick={() => setSelectedCategory('adventurer')}
-              className={`px-3 py-1.5 text-xs font-pixel rounded transition flex items-center gap-1.5 ${
-                selectedCategory === 'adventurer'
-                  ? 'bg-o2-green text-black font-bold shadow-md'
-                  : 'bg-retro-dark border border-retro-border text-gray-300 hover:border-gray-500'
-              }`}
-            >
-              <span>🏹</span> AVENTUREIROS RPG
+              <span>👾</span> 16-BIT (LEVE)
             </button>
           </div>
 
@@ -342,7 +415,7 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Filtrar por nome ou arquétipo..."
+                placeholder="Filtrar por nome ou arquétipo (ex: Arthur, Morgana, SRE)..."
                 className="w-full bg-[#0e141f] border border-retro-border focus:border-o2-green pl-9 pr-3 py-1.5 text-xs text-white font-mono rounded outline-none"
               />
             </div>
@@ -352,7 +425,7 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
                 value={customSeed}
                 onChange={(e) => setCustomSeed(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleApplyCustomSeed()}
-                placeholder="Digitar nome único..."
+                placeholder="Gerar com seu nome..."
                 className="bg-[#0e141f] border border-retro-border focus:border-o2-green px-3 py-1.5 text-xs text-white font-mono rounded outline-none w-36 sm:w-44"
               />
               <button
@@ -404,7 +477,7 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
                     <img
                       src={preset.url}
                       alt={preset.name}
-                      className="w-16 h-16 sm:w-20 sm:h-20 border border-retro-border bg-retro-card rounded p-1 mb-2 group-hover:scale-105 transition"
+                      className="w-16 h-16 sm:w-20 sm:h-20 border border-retro-border bg-retro-card rounded p-1 mb-2 group-hover:scale-105 transition object-contain"
                     />
                     <span className="font-pixel text-[11px] text-white truncate max-w-full">
                       {preset.name}
@@ -425,7 +498,7 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
             <img
               src={tempSelectedUrl}
               alt="Visual Selecionado"
-              className="w-12 h-12 border-2 border-o2-green rounded bg-retro-card p-1 flex-shrink-0"
+              className="w-12 h-12 border-2 border-o2-green rounded bg-retro-card p-1 flex-shrink-0 object-contain"
             />
             <div className="text-left">
               <span className="text-[10px] font-pixel text-o2-green uppercase block">

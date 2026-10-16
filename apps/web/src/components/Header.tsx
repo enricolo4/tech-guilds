@@ -72,7 +72,7 @@ export const Header: React.FC<HeaderProps> = ({
               <img
                 src={
                   authSession.user.avatar_url ||
-                  `https://api.dicebear.com/7.x/pixel-art/svg?seed=${authSession.user.name}`
+                  `https://api.dicebear.com/7.x/adventurer/svg?seed=${authSession.user.name}`
                 }
                 alt={authSession.user.name}
                 className="w-5 h-5 rounded border border-o2-green"
