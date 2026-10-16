@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 from uuid import UUID, uuid4
 
 from .item import Equipment, EquipmentSlot
@@ -21,7 +21,7 @@ class HeroProgressionStats:
         }
 
     @classmethod
-    def from_dict(cls, data: Optional[Dict[str, Any]]) -> "HeroProgressionStats":
+    def from_dict(cls, data: Dict[str, Any] | None) -> "HeroProgressionStats":
         if not data:
             return cls()
         return cls(
@@ -37,7 +37,7 @@ class HeroProgression:
     """Ficha RPG de progressão do Herói (Nível, EXP, Ouro, Vida, Mana e Atributos)."""
     hero_id: UUID
     name: str
-    email: Optional[str] = None
+    email: str | None = None
     hero_class: str = "NOVICE"
     level: int = 1
     exp: int = 0
@@ -47,7 +47,7 @@ class HeroProgression:
     mana: int = 100
     max_mana: int = 100
     stats: HeroProgressionStats = field(default_factory=HeroProgressionStats)
-    guild_id: Optional[UUID] = None
+    guild_id: UUID | None = None
     equipped_gear: Dict[str, Any] = field(default_factory=dict)
     active_buffs: Dict[str, float] = field(default_factory=dict)
     skill_cooldowns: Dict[str, int] = field(default_factory=dict)
@@ -112,7 +112,7 @@ class HeroProgression:
     def restore_mana(self, amount: int) -> None:
         self.mana = min(self.max_mana, self.mana + amount)
 
-    def equip(self, item: Equipment) -> Optional[Any]:
+    def equip(self, item: Equipment) -> Any | None:
         if self.level < item.required_level:
             raise ValueError(
                 f"Hero level {self.level} is lower than required level {item.required_level}"
@@ -149,7 +149,7 @@ class HeroProgression:
 
         return old_item_data
 
-    def unequip(self, slot: Any) -> Optional[Any]:
+    def unequip(self, slot: Any) -> Any | None:
         slot_key = slot.value if hasattr(slot, "value") else str(slot)
         old_item_data = self.equipped_gear.pop(slot_key, None)
         if old_item_data and isinstance(old_item_data, dict):

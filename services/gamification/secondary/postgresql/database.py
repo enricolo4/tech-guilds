@@ -1,6 +1,6 @@
 import os
 import uuid
-from typing import AsyncGenerator, Optional
+from typing import AsyncGenerator
 from sqlalchemy import CHAR, event, text
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.ext.asyncio import (
@@ -68,7 +68,7 @@ class GUID(TypeDecorator):
             return value
 
 
-async def get_db_session() -> AsyncGenerator[Optional[AsyncSession], None]:
+async def get_db_session() -> AsyncGenerator[AsyncSession | None, None]:
     """Dependency / Generator para obter sessões de banco de dados assíncronas com fallback seguro."""
     if os.getenv("TESTING", "false").lower() == "true":
         yield None

@@ -1,5 +1,5 @@
 import logging
-from typing import List, Optional
+from typing import List
 import os
 
 try:
@@ -41,7 +41,7 @@ class NatsJetStreamPublisher(EventPublisherPort):
 
     def __init__(
         self,
-        nats_url: Optional[str] = None,
+        nats_url: str | None = None,
         stream_name: str = NATS_STREAM_TECH_GUILDS,
         fallback_mode: bool = False,
     ):
@@ -49,7 +49,7 @@ class NatsJetStreamPublisher(EventPublisherPort):
         self.stream_name = stream_name
         self.fallback_mode = fallback_mode
         self._nc = None
-        self._js: Optional[JetStreamContext] = None
+        self._js: JetStreamContext | None = None
         self.published_events: List[HeroRegisteredEvent] = []
 
     async def connect(self) -> bool:

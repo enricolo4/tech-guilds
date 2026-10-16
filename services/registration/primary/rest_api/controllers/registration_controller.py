@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
@@ -18,12 +18,12 @@ router = APIRouter(prefix="/registration", tags=["Registration"])
 
 
 class RegisterHeroRequest(BaseModel):
-    email: Optional[str] = Field(None, description="Email corporativo do herói")
-    name: Optional[str] = Field(None, description="Nome ou apelido do herói")
-    hero_class: Optional[str] = Field("NOVICE", description="Classe inicial (NOVICE, WARRIOR, MAGE, PALADIN, RANGER, TACTICIAN)")
-    avatar_url: Optional[str] = Field(None, description="URL do avatar")
-    sso_token: Optional[str] = Field(None, description="Token JWT do provedor SSO")
-    sso_provider: Optional[str] = Field(None, description="Provedor SSO (google, github, azure, microsoft)")
+    email: str | None = Field(None, description="Email corporativo do herói")
+    name: str | None = Field(None, description="Nome ou apelido do herói")
+    hero_class: str | None = Field("NOVICE", description="Classe inicial (NOVICE, WARRIOR, MAGE, PALADIN, RANGER, TACTICIAN)")
+    avatar_url: str | None = Field(None, description="URL do avatar")
+    sso_token: str | None = Field(None, description="Token JWT do provedor SSO")
+    sso_provider: str | None = Field(None, description="Provedor SSO (google, github, azure, microsoft)")
 
 
 class HeroStatsResponse(BaseModel):
@@ -37,7 +37,7 @@ class HeroResponse(BaseModel):
     id: UUID
     email: str
     name: str
-    avatar_url: Optional[str]
+    avatar_url: str | None
     hero_class: str
     level: int
     experience: int

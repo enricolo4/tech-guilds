@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Optional, Union
+from typing import Union
 from uuid import UUID
 
 from services.gamification.domain.model.hero_progression import HeroProgression
@@ -11,8 +11,8 @@ from services.gamification.domain.model.skill import Skill
 class CastSkillCommand:
     hero_id: UUID
     skill_id: str
-    target_boss_id: Optional[UUID] = None
-    target_guild_id: Optional[UUID] = None
+    target_boss_id: UUID | None = None
+    target_guild_id: UUID | None = None
 
 
 @dataclass
@@ -35,8 +35,8 @@ class CastSkillPort(ABC):
     async def execute(
         self,
         cmd_or_hero_id: Union[CastSkillCommand, UUID],
-        skill_id: Optional[str] = None,
-        target_boss_id: Optional[UUID] = None,
-        target_guild_id: Optional[UUID] = None,
+        skill_id: str | None = None,
+        target_boss_id: UUID | None = None,
+        target_guild_id: UUID | None = None,
     ) -> CastSkillResult:
         pass

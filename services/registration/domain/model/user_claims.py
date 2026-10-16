@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass(frozen=True)
@@ -9,4 +8,4 @@ class UserClaims:
     name: str
     provider: str  # 'google', 'github', 'azure', 'microsoft'
     provider_user_id: str
-    avatar_url: Optional[str] = None
+    avatar_url: str | None = None

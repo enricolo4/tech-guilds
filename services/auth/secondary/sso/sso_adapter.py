@@ -1,5 +1,4 @@
 import httpx
-from typing import Optional
 from services.auth.domain.model.user_claims import UserClaims
 from services.auth.domain.ports.secondary.sso_port import SSOIdentityPort
 
@@ -9,7 +8,7 @@ class MultiProviderSSOAdapter(SSOIdentityPort):
     Suporta Google Workspace, GitHub Enterprise, Microsoft / Azure AD.
     """
 
-    def __init__(self, http_client: Optional[httpx.AsyncClient] = None):
+    def __init__(self, http_client: httpx.AsyncClient | None = None):
         self._client = http_client
 
     def _get_client(self) -> httpx.AsyncClient:

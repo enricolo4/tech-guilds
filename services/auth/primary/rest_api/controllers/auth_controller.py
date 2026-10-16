@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 from pydantic import BaseModel, Field
 
@@ -24,7 +24,7 @@ class UserClaimsResponse(BaseModel):
     name: str
     provider: str
     provider_user_id: str
-    avatar_url: Optional[str] = None
+    avatar_url: str | None = None
 
 
 class LoginSSOResponse(BaseModel):
@@ -36,17 +36,17 @@ class LoginSSOResponse(BaseModel):
 
 
 class ValidateTokenRequest(BaseModel):
-    token: Optional[str] = Field(None, description="Token JWT para validação")
+    token: str | None = Field(None, description="Token JWT para validação")
 
 
 class ValidateTokenResponse(BaseModel):
     is_valid: bool
-    user_id: Optional[str] = None
-    email: Optional[str] = None
-    name: Optional[str] = None
+    user_id: str | None = None
+    email: str | None = None
+    name: str | None = None
     roles: List[str] = []
-    session_id: Optional[str] = None
-    error: Optional[str] = None
+    session_id: str | None = None
+    error: str | None = None
 
 
 router = APIRouter(prefix="/auth", tags=["Autenticação & Sessões"])
@@ -89,8 +89,8 @@ async def login_sso(
 
 @router.post("/validate", response_model=ValidateTokenResponse, status_code=status.HTTP_200_OK)
 async def validate_token(
-    request: Optional[ValidateTokenRequest] = None,
-    authorization: Optional[str] = Header(None),
+    request: ValidateTokenRequest | None = None,
+    authorization: str | None = Header(None),
     validate_token_port: ValidateTokenPort = Depends(get_validate_token_port),
 ):
     """Valida a integridade criptográfica do JWT e se a sessão continua ativa no repositório."""

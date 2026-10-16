@@ -1,6 +1,5 @@
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Optional
 from uuid import UUID
 
 
@@ -11,9 +10,9 @@ class GuildMember:
     name: str
     email: str
     hero_class: str
-    guild_id: Optional[UUID] = None
+    guild_id: UUID | None = None
     level: int = 1
-    avatar_url: Optional[str] = None
+    avatar_url: str | None = None
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 

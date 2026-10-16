@@ -1,6 +1,5 @@
 import uuid
 from datetime import datetime
-from typing import Optional
 from sqlalchemy import DateTime, Integer, String, Uuid, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -20,7 +19,7 @@ class HeroModel(Base):
     id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    avatar_url: Mapped[Optional[str]] = mapped_column(String(1024), nullable=True)
+    avatar_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
     hero_class: Mapped[str] = mapped_column(String(50), nullable=False, default="NOVICE")
     level: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     experience: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
@@ -33,7 +32,7 @@ class HeroModel(Base):
     intelligence: Mapped[int] = mapped_column(Integer, nullable=False, default=10)
     constitution: Mapped[int] = mapped_column(Integer, nullable=False, default=10)
     perception: Mapped[int] = mapped_column(Integer, nullable=False, default=10)
-    guild_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid(as_uuid=True), nullable=True)
+    guild_id: Mapped[uuid.UUID | None] = mapped_column(Uuid(as_uuid=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

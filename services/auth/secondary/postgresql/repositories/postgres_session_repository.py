@@ -1,4 +1,4 @@
-from typing import Callable, List, Optional
+from typing import Callable, List
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -29,7 +29,7 @@ class PostgresSessionRepository(SessionRepository):
                     await db.flush()
                     return model.to_domain()
 
-    async def find_by_id(self, session_id: str) -> Optional[Session]:
+    async def find_by_id(self, session_id: str) -> Session | None:
         async with self._session_factory() as db:
             result = await db.execute(
                 select(SessionModel).where(SessionModel.id == session_id)
@@ -65,7 +65,7 @@ class InMemorySessionRepository(SessionRepository):
         self._sessions[session.id] = session
         return session
 
-    async def find_by_id(self, session_id: str) -> Optional[Session]:
+    async def find_by_id(self, session_id: str) -> Session | None:
         return self._sessions.get(session_id)
 
     async def revoke(self, session_id: str) -> None:

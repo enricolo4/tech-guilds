@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Dict
 import httpx
 from services.registration.domain.model.user_claims import UserClaims
 from services.registration.domain.ports.secondary.sso_port import SSOIdentityPort
@@ -9,7 +9,7 @@ class MultiProviderSSOAdapter(SSOIdentityPort):
     Suporta Google Workspace, GitHub Enterprise, Microsoft / Azure AD.
     """
 
-    def __init__(self, http_client: Optional[httpx.AsyncClient] = None):
+    def __init__(self, http_client: httpx.AsyncClient | None = None):
         self._client = http_client
 
     def _get_client(self) -> httpx.AsyncClient:
@@ -143,7 +143,7 @@ class MultiProviderSSOAdapter(SSOIdentityPort):
 class MockSSOAdapter(SSOIdentityPort):
     """Adaptador mock configurável para testes de integração e unitários."""
 
-    def __init__(self, predefined_claims: Optional[Dict[str, UserClaims]] = None):
+    def __init__(self, predefined_claims: Dict[str, UserClaims] | None = None):
         self.claims_by_token: Dict[str, UserClaims] = predefined_claims or {}
 
     def set_mock_claims(self, token: str, claims: UserClaims) -> None:

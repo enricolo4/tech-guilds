@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta, timezone
-from typing import Optional
 from jose import jwt, JWTError
 
 from services.auth.domain.model.token import TokenPayload
@@ -19,7 +18,7 @@ class JoseJWTService(TokenServicePort):
         self._algorithm = algorithm
         self._default_expires_in = default_expires_in
 
-    def issue_token(self, payload: TokenPayload, expires_in_seconds: Optional[int] = None) -> str:
+    def issue_token(self, payload: TokenPayload, expires_in_seconds: int | None = None) -> str:
         ttl = expires_in_seconds or self._default_expires_in
         now = datetime.now(timezone.utc)
         exp = int((now + timedelta(seconds=ttl)).timestamp())

@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List
 from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,10 +21,10 @@ class InMemoryQuestRepository(QuestRepository):
     def __init__(self):
         self._storage: dict[UUID, Quest] = {}
 
-    async def get_by_id(self, quest_id: UUID) -> Optional[Quest]:
+    async def get_by_id(self, quest_id: UUID) -> Quest | None:
         return self._storage.get(quest_id)
 
-    async def get_by_external_id(self, external_id: str) -> Optional[Quest]:
+    async def get_by_external_id(self, external_id: str) -> Quest | None:
         for q in self._storage.values():
             if q.external_id == external_id:
                 return q
@@ -60,13 +60,13 @@ class PostgresQuestRepository(QuestRepository):
             is_pair_programming=model.is_pair_programming,
         )
 
-    async def get_by_id(self, quest_id: UUID) -> Optional[Quest]:
+    async def get_by_id(self, quest_id: UUID) -> Quest | None:
         stmt = select(QuestModel).where(QuestModel.id == quest_id)
         result = await self.session.execute(stmt)
         model = result.scalar_one_or_none()
         return self._to_domain(model) if model else None
 
-    async def get_by_external_id(self, external_id: str) -> Optional[Quest]:
+    async def get_by_external_id(self, external_id: str) -> Quest | None:
         stmt = select(QuestModel).where(QuestModel.external_id == external_id)
         result = await self.session.execute(stmt)
         model = result.scalar_one_or_none()

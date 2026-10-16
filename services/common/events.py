@@ -1,7 +1,7 @@
 import json
 from dataclasses import dataclass, asdict
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 from uuid import UUID
 
 NATS_STREAM_TECH_GUILDS = "TECH_GUILDS"
@@ -15,11 +15,11 @@ class HeroRegisteredEvent:
     email: str
     name: str
     hero_class: str
-    avatar_url: Optional[str] = None
+    avatar_url: str | None = None
     level: int = 1
     experience: int = 0
     gold: int = 0
-    occurred_at: str = None
+    occurred_at: str | None = None
 
     def __post_init__(self):
         if self.occurred_at is None:

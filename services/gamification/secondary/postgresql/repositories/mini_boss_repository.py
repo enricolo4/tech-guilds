@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List
 from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,10 +19,10 @@ class InMemoryMiniBossRepository(MiniBossRepository):
     def __init__(self):
         self._storage: dict[UUID, MiniBoss] = {}
 
-    async def get_by_id(self, boss_id: UUID) -> Optional[MiniBoss]:
+    async def get_by_id(self, boss_id: UUID) -> MiniBoss | None:
         return self._storage.get(boss_id)
 
-    async def get_by_external_id(self, external_id: str) -> Optional[MiniBoss]:
+    async def get_by_external_id(self, external_id: str) -> MiniBoss | None:
         for b in self._storage.values():
             if b.external_id == external_id:
                 return b
@@ -58,13 +58,13 @@ class PostgresMiniBossRepository(MiniBossRepository):
             bounty_gold=model.bounty_gold,
         )
 
-    async def get_by_id(self, boss_id: UUID) -> Optional[MiniBoss]:
+    async def get_by_id(self, boss_id: UUID) -> MiniBoss | None:
         stmt = select(MiniBossModel).where(MiniBossModel.id == boss_id)
         result = await self.session.execute(stmt)
         model = result.scalar_one_or_none()
         return self._to_domain(model) if model else None
 
-    async def get_by_external_id(self, external_id: str) -> Optional[MiniBoss]:
+    async def get_by_external_id(self, external_id: str) -> MiniBoss | None:
         stmt = select(MiniBossModel).where(MiniBossModel.external_id == external_id)
         result = await self.session.execute(stmt)
         model = result.scalar_one_or_none()

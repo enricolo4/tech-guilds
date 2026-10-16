@@ -1,6 +1,5 @@
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional
 from uuid import UUID, uuid4
 
 
@@ -47,8 +46,8 @@ class Hero:
     id: UUID = field(default_factory=uuid4)
     email: str = ""
     name: str = ""
-    avatar_url: Optional[str] = None
-    guild_id: Optional[UUID] = None
+    avatar_url: str | None = None
+    guild_id: UUID | None = None
     hero_class: HeroClass = HeroClass.NOVICE
     level: int = 1
     experience: int = 0

@@ -1,6 +1,6 @@
 import inspect
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from services.common.events import (
     NATS_STREAM_TECH_GUILDS,
@@ -27,8 +27,8 @@ class HeroRegisteredConsumer:
     def __init__(
         self,
         sync_port: SyncHeroMemberPort,
-        nats_client: Optional[Any] = None,
-        jetstream: Optional[Any] = None,
+        nats_client: Any | None = None,
+        jetstream: Any | None = None,
     ):
         self.sync_port = sync_port
         self.nc = nats_client

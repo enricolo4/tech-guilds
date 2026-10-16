@@ -1,5 +1,5 @@
 import os
-from typing import AsyncGenerator, Optional
+from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
@@ -25,7 +25,7 @@ async_session_maker = async_sessionmaker(
 )
 
 
-async def get_db_session() -> AsyncGenerator[Optional[AsyncSession], None]:
+async def get_db_session() -> AsyncGenerator[AsyncSession | None, None]:
     """Dependency do FastAPI / Gerador para fornecer sessões assíncronas do schema 'registration'."""
     if os.getenv("TESTING", "false").lower() == "true":
         yield None

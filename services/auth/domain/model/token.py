@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Optional, List
+from typing import List
 import uuid
 
 
@@ -13,8 +13,8 @@ class TokenPayload:
     provider: str
     session_id: str
     roles: List[str] = field(default_factory=list)
-    exp: Optional[int] = None
-    iat: Optional[int] = None
+    exp: int | None = None
+    iat: int | None = None
 
 
 @dataclass(frozen=True)
@@ -23,7 +23,7 @@ class AuthToken:
     access_token: str
     token_type: str = "bearer"
     expires_in: int = 3600
-    refresh_token: Optional[str] = None
+    refresh_token: str | None = None
 
 
 @dataclass
@@ -36,10 +36,10 @@ class Session:
     provider_user_id: str
     created_at: datetime
     expires_at: datetime
-    token: Optional[str] = None
+    token: str | None = None
     is_revoked: bool = False
 
-    def is_active(self, current_time: Optional[datetime] = None) -> bool:
+    def is_active(self, current_time: datetime | None = None) -> bool:
         """Verifica se a sessão está válida e não revogada."""
         if self.is_revoked:
             return False

@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Optional
 from uuid import UUID
 
 from services.gamification.domain.model.mini_boss import MiniBoss, BossSeverity
@@ -14,8 +13,8 @@ class ProcessBugEventCommand:
     guild_id: UUID
     severity: BossSeverity
     is_resolved: bool
-    resolver_email: Optional[str] = None
-    resolver_hero_id: Optional[UUID] = None
+    resolver_email: str | None = None
+    resolver_hero_id: UUID | None = None
 
 
 @dataclass
@@ -26,7 +25,7 @@ class ProcessBugEventResult:
     bounty_guild_xp: int = 0
     bounty_gold: int = 0
     hero_leveled_up: bool = False
-    hero_progression: Optional[HeroProgression] = None
+    hero_progression: HeroProgression | None = None
 
 
 class ProcessBugEventPort(ABC):

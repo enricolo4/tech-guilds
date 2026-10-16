@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Optional, Union
+from typing import Any, Union
 from uuid import UUID
 
 from services.gamification.domain.model.hero_progression import HeroProgression
@@ -17,7 +17,7 @@ class EquipItemCommand:
 class EquipItemResult:
     hero: HeroProgression
     equipped_item: Equipment
-    unequipped_item: Optional[Any] = None
+    unequipped_item: Any | None = None
 
 
 @dataclass
@@ -29,7 +29,7 @@ class UnequipItemCommand:
 @dataclass
 class UnequipItemResult:
     hero: HeroProgression
-    unequipped_item: Optional[Any] = None
+    unequipped_item: Any | None = None
 
 
 class EquipItemPort(ABC):
@@ -39,7 +39,7 @@ class EquipItemPort(ABC):
     async def execute(
         self,
         cmd_or_hero_id: Union[EquipItemCommand, UUID],
-        equipment: Optional[Equipment] = None,
+        equipment: Equipment | None = None,
     ) -> EquipItemResult:
         pass
 
@@ -47,6 +47,6 @@ class EquipItemPort(ABC):
     async def unequip(
         self,
         cmd_or_hero_id: Union[UnequipItemCommand, UUID],
-        slot: Optional[Union[EquipmentSlot, str]] = None,
+        slot: Union[EquipmentSlot, str] | None = None,
     ) -> UnequipItemResult:
         pass

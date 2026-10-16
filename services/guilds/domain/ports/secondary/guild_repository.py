@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import List
 from uuid import UUID
 
 from services.guilds.domain.model.guild import Guild
@@ -14,12 +14,12 @@ class GuildRepository(ABC):
         pass
 
     @abstractmethod
-    async def find_by_id(self, guild_id: UUID) -> Optional[Guild]:
+    async def find_by_id(self, guild_id: UUID) -> Guild | None:
         """Busca uma guilda pelo identificador único."""
         pass
 
     @abstractmethod
-    async def find_by_name(self, name: str) -> Optional[Guild]:
+    async def find_by_name(self, name: str) -> Guild | None:
         """Busca uma guilda pelo nome exato."""
         pass
 

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import List
 from uuid import UUID
 
 from services.gamification.domain.model.quest import Quest
@@ -9,11 +9,11 @@ class QuestRepository(ABC):
     """Porta Secundária (Driven/Output Port) para persistência de Quests."""
 
     @abstractmethod
-    async def get_by_id(self, quest_id: UUID) -> Optional[Quest]:
+    async def get_by_id(self, quest_id: UUID) -> Quest | None:
         pass
 
     @abstractmethod
-    async def get_by_external_id(self, external_id: str) -> Optional[Quest]:
+    async def get_by_external_id(self, external_id: str) -> Quest | None:
         pass
 
     @abstractmethod

@@ -1,5 +1,4 @@
 import os
-from typing import Optional
 
 from services.registration.domain.ports.primary.register_hero_port import RegisterHeroPort
 from services.registration.domain.ports.secondary.hero_repository import HeroRepository
@@ -24,13 +23,13 @@ class RegistrationContainer:
     """Container de Injeção de Dependências para o microsserviço de Registration.
     Expõe formalmente as Portas Primárias e Secundárias para os controladores FastAPI.
     """
-    _instance: Optional["RegistrationContainer"] = None
+    _instance: "RegistrationContainer" | None = None
 
     def __init__(
         self,
-        hero_repository: Optional[HeroRepository] = None,
-        sso_port: Optional[SSOIdentityPort] = None,
-        event_publisher: Optional[EventPublisherPort] = None,
+        hero_repository: HeroRepository | None = None,
+        sso_port: SSOIdentityPort | None = None,
+        event_publisher: EventPublisherPort | None = None,
     ):
         # Driven / Secondary Adapters
         self.hero_repo: HeroRepository = hero_repository or InMemoryHeroRepository()
@@ -60,9 +59,9 @@ class RegistrationContainer:
     @classmethod
     def configure(
         cls,
-        hero_repository: Optional[HeroRepository] = None,
-        sso_port: Optional[SSOIdentityPort] = None,
-        event_publisher: Optional[EventPublisherPort] = None,
+        hero_repository: HeroRepository | None = None,
+        sso_port: SSOIdentityPort | None = None,
+        event_publisher: EventPublisherPort | None = None,
     ) -> "RegistrationContainer":
         cls._instance = RegistrationContainer(
             hero_repository=hero_repository,
@@ -82,7 +81,7 @@ def get_container() -> RegistrationContainer:
 
 
 def get_hero_repository(
-    session: Optional[AsyncSession] = Depends(get_db_session),
+    session: AsyncSession | None = Depends(get_db_session),
 ) -> HeroRepository:
     """Injetor FastAPI da Porta Secundária do Repositório de Heróis."""
     if session is not None and os.getenv("TESTING", "false").lower() != "true":

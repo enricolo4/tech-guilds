@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
@@ -38,11 +38,11 @@ class CardEventRequest(BaseModel):
     title: str = Field(..., description="Título da tarefa")
     guild_id: UUID = Field(..., description="ID da Guilda (Squad)")
     new_status: QuestStatus = Field(..., description="Novo status da Quest")
-    assignee_email: Optional[str] = None
-    assignee_hero_id: Optional[UUID] = None
+    assignee_email: str | None = None
+    assignee_hero_id: UUID | None = None
     difficulty: QuestDifficulty = QuestDifficulty.MEDIUM
     is_pair_programming: bool = False
-    adventure_id: Optional[UUID] = None
+    adventure_id: UUID | None = None
 
 
 class BugEventRequest(BaseModel):
@@ -51,15 +51,15 @@ class BugEventRequest(BaseModel):
     guild_id: UUID = Field(..., description="ID da Guilda impactada")
     severity: BossSeverity = BossSeverity.MEDIUM
     is_resolved: bool = Field(False, description="True se o bug foi fechado/resolvido")
-    resolver_email: Optional[str] = None
-    resolver_hero_id: Optional[UUID] = None
+    resolver_email: str | None = None
+    resolver_hero_id: UUID | None = None
 
 
 class CastSkillRequest(BaseModel):
     hero_id: UUID
     skill_id: str
-    target_boss_id: Optional[UUID] = None
-    target_guild_id: Optional[UUID] = None
+    target_boss_id: UUID | None = None
+    target_guild_id: UUID | None = None
 
 
 class EquipmentRequest(BaseModel):
@@ -72,7 +72,7 @@ class EquipmentRequest(BaseModel):
     bonus_constitution: int = 0
     bonus_perception: int = 0
     required_level: int = 1
-    allowed_class: Optional[str] = None
+    allowed_class: str | None = None
 
 
 class EquipItemRequest(BaseModel):
@@ -264,7 +264,7 @@ async def get_hero_progression(
 
 @router.get("/quests", summary="Lista todas as quests da guilda")
 async def list_quests(
-    guild_id: Optional[UUID] = None,
+    guild_id: UUID | None = None,
     container: GamificationContainer = Depends(get_gamification_container),
 ):
     if guild_id:
@@ -288,7 +288,7 @@ async def list_quests(
 
 @router.get("/combat/mini-bosses", summary="Lista mini-bosses ativos")
 async def list_mini_bosses(
-    guild_id: Optional[UUID] = None,
+    guild_id: UUID | None = None,
     container: GamificationContainer = Depends(get_gamification_container),
 ):
     if guild_id:

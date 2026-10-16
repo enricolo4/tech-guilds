@@ -1,4 +1,4 @@
-from typing import Any, Optional, Union
+from typing import Any, Union
 from uuid import UUID
 
 from services.gamification.domain.model.item import Equipment, EquipmentSlot
@@ -23,7 +23,7 @@ class EquipItemUseCase(EquipItemPort):
     async def execute(
         self,
         cmd_or_hero_id: Union[EquipItemCommand, UUID],
-        equipment: Optional[Equipment] = None,
+        equipment: Equipment | None = None,
     ) -> EquipItemResult:
         if isinstance(cmd_or_hero_id, EquipItemCommand):
             hero_id = cmd_or_hero_id.hero_id
@@ -50,7 +50,7 @@ class EquipItemUseCase(EquipItemPort):
     async def unequip(
         self,
         cmd_or_hero_id: Union[UnequipItemCommand, UUID],
-        slot: Optional[Union[EquipmentSlot, str]] = None,
+        slot: Union[EquipmentSlot, str] | None = None,
     ) -> UnequipItemResult:
         if isinstance(cmd_or_hero_id, UnequipItemCommand):
             hero_id = cmd_or_hero_id.hero_id

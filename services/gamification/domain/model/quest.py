@@ -1,6 +1,5 @@
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional
 from uuid import UUID, uuid4
 
 
@@ -41,8 +40,8 @@ class Quest:
     external_source: str = "linear"  # "linear", "jira", "github"
     title: str = ""
     guild_id: UUID = field(default_factory=uuid4)
-    assignee_hero_id: Optional[UUID] = None
-    adventure_id: Optional[UUID] = None
+    assignee_hero_id: UUID | None = None
+    adventure_id: UUID | None = None
     quest_type: QuestType = QuestType.FEATURE
     status: QuestStatus = QuestStatus.TODO
     difficulty: QuestDifficulty = QuestDifficulty.MEDIUM

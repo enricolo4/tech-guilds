@@ -1,4 +1,3 @@
-from typing import Optional
 
 from services.guilds.domain.ports.primary.guild_ports import (
     AddMemberPort,
@@ -26,12 +25,12 @@ from services.guilds.secondary.postgresql.repositories.postgres_guild_repository
 class DependencyContainer:
     """Container de Injeção de Dependências do microsserviço de Guilds."""
 
-    _instance: Optional["DependencyContainer"] = None
+    _instance: "DependencyContainer" | None = None
 
     def __init__(
         self,
-        guild_repository: Optional[GuildRepository] = None,
-        member_repository: Optional[GuildMemberRepository] = None,
+        guild_repository: GuildRepository | None = None,
+        member_repository: GuildMemberRepository | None = None,
     ):
         self._guild_repository = guild_repository or InMemoryGuildRepository()
         self._member_repository = member_repository or InMemoryGuildMemberRepository()
@@ -55,7 +54,7 @@ class DependencyContainer:
         return cls._instance
 
     @classmethod
-    def reset(cls, container: Optional["DependencyContainer"] = None) -> None:
+    def reset(cls, container: "DependencyContainer" | None = None) -> None:
         cls._instance = container
 
     @property
@@ -80,7 +79,7 @@ class DependencyContainer:
 
 
 def get_container(
-    session: Optional[AsyncSession] = Depends(get_db_session),
+    session: AsyncSession | None = Depends(get_db_session),
 ) -> DependencyContainer:
     if session is not None and os.getenv("TESTING", "false").lower() != "true":
         return DependencyContainer(

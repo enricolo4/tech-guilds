@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, Optional
+from typing import Dict
 
 
 class SkillTargetType(str, Enum):
@@ -28,7 +28,7 @@ class Skill:
     cooldown_turns: int = 1
     target_type: SkillTargetType = SkillTargetType.BOSS
     base_power: int = 50
-    effect: Optional[SkillEffect] = None
+    effect: SkillEffect | None = None
 
 
 # Habilidades canônicas inspiradas em papéis de tecnologia e Habitica
@@ -101,7 +101,7 @@ SKILL_REGISTRY: Dict[str, Skill] = {
 }
 
 
-def get_skill(skill_id_or_name: str) -> Optional[Skill]:
+def get_skill(skill_id_or_name: str) -> Skill | None:
     """Recupera habilidade pelo ID ou nome em formato normalizado."""
     key = skill_id_or_name.strip().upper().replace(" ", "_").replace("-", "_")
     return SKILL_REGISTRY.get(key)

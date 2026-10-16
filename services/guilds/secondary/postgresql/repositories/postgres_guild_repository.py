@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Dict, List
 from uuid import UUID
 
 from sqlalchemy import delete, select
@@ -80,7 +80,7 @@ class PostgresGuildRepository(GuildRepository):
         await self.session.refresh(model, ["members"])
         return _map_guild_model_to_domain(model)
 
-    async def find_by_id(self, guild_id: UUID) -> Optional[Guild]:
+    async def find_by_id(self, guild_id: UUID) -> Guild | None:
         stmt = (
             select(GuildModel)
             .where(GuildModel.id == guild_id)
@@ -90,10 +90,10 @@ class PostgresGuildRepository(GuildRepository):
         model = result.scalar_one_or_none()
         return _map_guild_model_to_domain(model) if model else None
 
-    async def get_by_id(self, guild_id: UUID) -> Optional[Guild]:
+    async def get_by_id(self, guild_id: UUID) -> Guild | None:
         return await self.find_by_id(guild_id)
 
-    async def find_by_name(self, name: str) -> Optional[Guild]:
+    async def find_by_name(self, name: str) -> Guild | None:
         stmt = (
             select(GuildModel)
             .where(GuildModel.name == name)
@@ -159,7 +159,7 @@ class PostgresGuildMemberRepository(GuildMemberRepository):
         await self.session.refresh(model)
         return _map_member_model_to_domain(model)
 
-    async def find_by_hero_id(self, hero_id: UUID) -> Optional[GuildMember]:
+    async def find_by_hero_id(self, hero_id: UUID) -> GuildMember | None:
         stmt = select(GuildMemberModel).where(GuildMemberModel.hero_id == hero_id)
         result = await self.session.execute(stmt)
         model = result.scalar_one_or_none()
@@ -199,7 +199,7 @@ class PostgresGuildMemberRepository(GuildMemberRepository):
     async def list_by_guild(self, guild_id: UUID) -> List[GuildMember]:
         return await self.find_by_guild_id(guild_id)
 
-    async def update_guild_assignment(self, hero_id: UUID, guild_id: Optional[UUID]) -> Optional[GuildMember]:
+    async def update_guild_assignment(self, hero_id: UUID, guild_id: UUID | None) -> GuildMember | None:
         stmt = select(GuildMemberModel).where(GuildMemberModel.hero_id == hero_id)
         result = await self.session.execute(stmt)
         model = result.scalar_one_or_none()
@@ -254,13 +254,13 @@ class InMemoryGuildRepository(GuildRepository):
         self._guilds[guild.id] = guild
         return guild
 
-    async def find_by_id(self, guild_id: UUID) -> Optional[Guild]:
+    async def find_by_id(self, guild_id: UUID) -> Guild | None:
         return self._guilds.get(guild_id)
 
-    async def get_by_id(self, guild_id: UUID) -> Optional[Guild]:
+    async def get_by_id(self, guild_id: UUID) -> Guild | None:
         return await self.find_by_id(guild_id)
 
-    async def find_by_name(self, name: str) -> Optional[Guild]:
+    async def find_by_name(self, name: str) -> Guild | None:
         for g in self._guilds.values():
             if g.name.lower() == name.lower():
                 return g
@@ -284,7 +284,7 @@ class InMemoryGuildMemberRepository(GuildMemberRepository):
         self._members[member.hero_id] = member
         return member
 
-    async def find_by_hero_id(self, hero_id: UUID) -> Optional[GuildMember]:
+    async def find_by_hero_id(self, hero_id: UUID) -> GuildMember | None:
         return self._members.get(hero_id)
 
     async def find_by_guild_id(self, guild_id: UUID) -> List[GuildMember]:
@@ -293,7 +293,7 @@ class InMemoryGuildMemberRepository(GuildMemberRepository):
     async def list_by_guild(self, guild_id: UUID) -> List[GuildMember]:
         return await self.find_by_guild_id(guild_id)
 
-    async def update_guild_assignment(self, hero_id: UUID, guild_id: Optional[UUID]) -> Optional[GuildMember]:
+    async def update_guild_assignment(self, hero_id: UUID, guild_id: UUID | None) -> GuildMember | None:
         member = self._members.get(hero_id)
         if member:
             member.guild_id = guild_id

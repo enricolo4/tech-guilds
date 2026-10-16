@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Optional
 from uuid import UUID
 
 from services.gamification.domain.model.hero_progression import HeroProgression
@@ -10,12 +9,12 @@ from services.gamification.domain.model.hero_progression import HeroProgression
 class SyncHeroProgressionCommand:
     hero_id: UUID
     name: str
-    email: Optional[str] = None
+    email: str | None = None
     hero_class: str = "NOVICE"
     level: int = 1
     experience: int = 0
     gold: int = 0
-    guild_id: Optional[UUID] = None
+    guild_id: UUID | None = None
 
 
 @dataclass

@@ -1,4 +1,4 @@
-from typing import Optional, Union
+from typing import Union
 from uuid import UUID
 
 from services.gamification.domain.model.skill import Skill, get_skill
@@ -22,7 +22,7 @@ class CastSkillUseCase(CastSkillPort):
     def __init__(
         self,
         hero_progression_repo: HeroProgressionRepository,
-        boss_repo: Optional[MiniBossRepository] = None,
+        boss_repo: MiniBossRepository | None = None,
     ):
         self.hero_progression_repo = hero_progression_repo
         self.boss_repo = boss_repo
@@ -30,9 +30,9 @@ class CastSkillUseCase(CastSkillPort):
     async def execute(
         self,
         cmd_or_hero_id: Union[CastSkillCommand, UUID],
-        skill_id: Optional[str] = None,
-        target_boss_id: Optional[UUID] = None,
-        target_guild_id: Optional[UUID] = None,
+        skill_id: str | None = None,
+        target_boss_id: UUID | None = None,
+        target_guild_id: UUID | None = None,
     ) -> CastSkillResult:
         if isinstance(cmd_or_hero_id, CastSkillCommand):
             cmd = cmd_or_hero_id
@@ -144,7 +144,7 @@ class CastSkillUseCase(CastSkillPort):
             squad_exp_buff=squad_exp_buff,
         )
 
-    async def _get_target_boss(self, boss_id: Optional[UUID]) -> MiniBoss:
+    async def _get_target_boss(self, boss_id: UUID | None) -> MiniBoss:
         if boss_id is None:
             raise ValueError("Target boss ID is required for this skill")
         if self.boss_repo is None:

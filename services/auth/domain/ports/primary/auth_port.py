@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Optional
 
 from services.auth.domain.model.token import AuthToken, TokenPayload
 from services.auth.domain.model.user_claims import UserClaims
@@ -31,8 +30,8 @@ class ValidateTokenCommand:
 class ValidateTokenResult:
     """Resultado da validação do token JWT e verificação de sessão."""
     is_valid: bool
-    payload: Optional[TokenPayload] = None
-    error: Optional[str] = None
+    payload: TokenPayload | None = None
+    error: str | None = None
 
 
 class AuthenticateUserPort(ABC):

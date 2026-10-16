@@ -1,4 +1,3 @@
-from typing import Optional
 
 from services.guilds.domain.ports.primary.guild_ports import (
     AddMemberCommand,
@@ -15,7 +14,7 @@ class AddMemberUseCase(AddMemberPort):
     def __init__(
         self,
         guild_repository: GuildRepository,
-        member_repository: Optional[GuildMemberRepository] = None,
+        member_repository: GuildMemberRepository | None = None,
     ):
         self.guild_repository = guild_repository
         self.member_repository = member_repository

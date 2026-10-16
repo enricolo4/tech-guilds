@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Optional
 from uuid import UUID
 
 from services.guilds.domain.model.guild import Guild
@@ -12,7 +11,7 @@ class CreateGuildCommand:
     """Comando para criar uma nova Guilda."""
     name: str
     description: str = ""
-    creator_hero_id: Optional[UUID] = None
+    creator_hero_id: UUID | None = None
 
 
 @dataclass
@@ -62,9 +61,9 @@ class SyncHeroMemberCommand:
     name: str
     email: str
     hero_class: str
-    avatar_url: Optional[str] = None
+    avatar_url: str | None = None
     level: int = 1
-    occurred_at: Optional[str] = None
+    occurred_at: str | None = None
 
 
 @dataclass

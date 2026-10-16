@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import List
 from uuid import UUID
 from services.registration.domain.model.hero import Hero
 
@@ -8,12 +8,12 @@ class HeroRepository(ABC):
     """Porta Secundária (Driven Port) para persistência de Heróis."""
 
     @abstractmethod
-    async def get_by_id(self, hero_id: UUID) -> Optional[Hero]:
+    async def get_by_id(self, hero_id: UUID) -> Hero | None:
         """Recupera um herói pelo seu UUID único."""
         pass
 
     @abstractmethod
-    async def get_by_email(self, email: str) -> Optional[Hero]:
+    async def get_by_email(self, email: str) -> Hero | None:
         """Recupera um herói pelo seu endereço de e-mail."""
         pass
 

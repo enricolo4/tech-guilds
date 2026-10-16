@@ -6,7 +6,7 @@ de dados (guilda, heróis, mini-boss arena, épico e armory/shop).
 
 from pathlib import Path
 from uuid import UUID, uuid4
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse, FileResponse
 

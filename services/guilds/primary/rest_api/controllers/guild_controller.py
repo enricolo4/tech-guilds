@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -26,7 +26,7 @@ router = APIRouter(prefix="/guilds", tags=["Guilds"])
 class CreateGuildRequest(BaseModel):
     name: str = Field(..., min_length=1, max_length=120, description="Nome da guilda / squad")
     description: str = Field(default="", description="Descrição do squad ou time")
-    creator_hero_id: Optional[UUID] = Field(default=None, description="ID do herói criador/líder")
+    creator_hero_id: UUID | None = Field(default=None, description="ID do herói criador/líder")
 
 
 class AddMemberRequest(BaseModel):
@@ -38,9 +38,9 @@ class GuildMemberResponse(BaseModel):
     name: str
     email: str
     hero_class: str
-    guild_id: Optional[UUID]
+    guild_id: UUID | None
     level: int
-    avatar_url: Optional[str]
+    avatar_url: str | None
 
 
 class GuildResponse(BaseModel):

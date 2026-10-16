@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, Optional, Union
+from typing import Any, Union
 
 from services.common.events import (
     HeroRegisteredEvent,

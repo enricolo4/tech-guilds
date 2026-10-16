@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, Optional
+from typing import Dict
 from uuid import UUID, uuid4
 
 
@@ -37,7 +37,7 @@ class Equipment(Item):
     bonus_constitution: int = 0
     bonus_perception: int = 0
     required_level: int = 1
-    allowed_class: Optional[str] = None
+    allowed_class: str | None = None
 
     def __post_init__(self):
         self.item_type = ItemType.EQUIPMENT
@@ -62,7 +62,7 @@ def create_equipment(
     constitution: int = 0,
     perception: int = 0,
     required_level: int = 1,
-    allowed_class: Optional[str] = None,
+    allowed_class: str | None = None,
 ) -> Equipment:
     return Equipment(
         name=name,

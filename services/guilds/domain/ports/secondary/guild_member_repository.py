@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import List
 from uuid import UUID
 
 from services.guilds.domain.model.guild_member import GuildMember
@@ -14,7 +14,7 @@ class GuildMemberRepository(ABC):
         pass
 
     @abstractmethod
-    async def find_by_hero_id(self, hero_id: UUID) -> Optional[GuildMember]:
+    async def find_by_hero_id(self, hero_id: UUID) -> GuildMember | None:
         """Busca a projeção do membro pelo ID do herói."""
         pass
 
@@ -24,7 +24,7 @@ class GuildMemberRepository(ABC):
         pass
 
     @abstractmethod
-    async def update_guild_assignment(self, hero_id: UUID, guild_id: Optional[UUID]) -> Optional[GuildMember]:
+    async def update_guild_assignment(self, hero_id: UUID, guild_id: UUID | None) -> GuildMember | None:
         """Atualiza a associação de guilda de um membro."""
         pass
 

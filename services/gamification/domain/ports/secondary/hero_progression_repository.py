@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import List
 from uuid import UUID
 
 from services.gamification.domain.model.hero_progression import HeroProgression
@@ -9,11 +9,11 @@ class HeroProgressionRepository(ABC):
     """Porta Secundária (Driven/Output Port) para persistência da ficha RPG do herói."""
 
     @abstractmethod
-    async def get_by_id(self, hero_id: UUID) -> Optional[HeroProgression]:
+    async def get_by_id(self, hero_id: UUID) -> HeroProgression | None:
         pass
 
     @abstractmethod
-    async def get_by_email(self, email: str) -> Optional[HeroProgression]:
+    async def get_by_email(self, email: str) -> HeroProgression | None:
         pass
 
     @abstractmethod

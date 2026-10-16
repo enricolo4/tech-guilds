@@ -1,5 +1,4 @@
 import os
-from typing import Optional
 
 from services.auth.domain.ports.primary.auth_port import (
     AuthenticateUserPort,
@@ -19,13 +18,13 @@ from services.auth.secondary.token_service.jwt_service import JoseJWTService
 
 class AuthContainer:
     """Container de injeção de dependências do microsserviço de Autenticação."""
-    _instance: Optional["AuthContainer"] = None
+    _instance: "AuthContainer" | None = None
 
     def __init__(
         self,
-        sso_adapter: Optional[SSOIdentityPort] = None,
-        session_repository: Optional[SessionRepository] = None,
-        token_service: Optional[TokenServicePort] = None,
+        sso_adapter: SSOIdentityPort | None = None,
+        session_repository: SessionRepository | None = None,
+        token_service: TokenServicePort | None = None,
     ):
         self._sso_adapter = sso_adapter or MultiProviderSSOAdapter()
         if session_repository is not None:
@@ -62,7 +61,7 @@ class AuthContainer:
         return cls._instance
 
     @classmethod
-    def set_instance(cls, container: Optional["AuthContainer"]) -> None:
+    def set_instance(cls, container: "AuthContainer" | None) -> None:
         cls._instance = container
 
     @classmethod

@@ -1,6 +1,6 @@
 import os
 import logging
-from typing import Optional, Tuple, Any
+from typing import Tuple, Any
 
 logger = logging.getLogger(__name__)
 
@@ -10,10 +10,10 @@ STREAM_SUBJECTS = ["tech_guilds.*"]
 
 
 async def get_nats_jetstream(
-    nats_url: Optional[str] = None,
+    nats_url: str | None = None,
     stream_name: str = STREAM_NAME,
-    subjects: Optional[list] = None,
-) -> Tuple[Optional[Any], Optional[Any]]:
+    subjects: list | None = None,
+) -> Tuple[Any | None, Any | None]:
     """Conecta ao NATS JetStream e assegura a existência do stream principal.
     
     Se o servidor NATS não estiver acessível, retorna (None, None) de forma rápida e resiliente,
@@ -56,7 +56,7 @@ async def get_nats_jetstream(
         return None, None
 
 
-async def close_nats(nc: Optional[Any]) -> None:
+async def close_nats(nc: Any | None) -> None:
     """Fecha a conexão com o servidor NATS de forma graciosa."""
     if nc and hasattr(nc, "is_closed") and not nc.is_closed:
         try:

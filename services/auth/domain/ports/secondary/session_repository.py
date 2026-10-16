@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional, List
+from typing import List
 from services.auth.domain.model.token import Session
 
 
@@ -12,7 +12,7 @@ class SessionRepository(ABC):
         pass
 
     @abstractmethod
-    async def find_by_id(self, session_id: str) -> Optional[Session]:
+    async def find_by_id(self, session_id: str) -> Session | None:
         """Recupera uma sessão pelo seu ID."""
         pass
 

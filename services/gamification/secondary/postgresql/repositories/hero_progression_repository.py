@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List
 from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,10 +19,10 @@ class InMemoryHeroProgressionRepository(HeroProgressionRepository):
     def __init__(self):
         self._storage: dict[UUID, HeroProgression] = {}
 
-    async def get_by_id(self, hero_id: UUID) -> Optional[HeroProgression]:
+    async def get_by_id(self, hero_id: UUID) -> HeroProgression | None:
         return self._storage.get(hero_id)
 
-    async def get_by_email(self, email: str) -> Optional[HeroProgression]:
+    async def get_by_email(self, email: str) -> HeroProgression | None:
         for h in self._storage.values():
             if h.email and h.email.lower() == email.lower():
                 return h
@@ -64,13 +64,13 @@ class PostgresHeroProgressionRepository(HeroProgressionRepository):
             guild_id=model.guild_id,
         )
 
-    async def get_by_id(self, hero_id: UUID) -> Optional[HeroProgression]:
+    async def get_by_id(self, hero_id: UUID) -> HeroProgression | None:
         stmt = select(HeroProgressionModel).where(HeroProgressionModel.hero_id == hero_id)
         result = await self.session.execute(stmt)
         model = result.scalar_one_or_none()
         return self._to_domain(model) if model else None
 
-    async def get_by_email(self, email: str) -> Optional[HeroProgression]:
+    async def get_by_email(self, email: str) -> HeroProgression | None:
         stmt = select(HeroProgressionModel).where(HeroProgressionModel.email == email)
         result = await self.session.execute(stmt)
         model = result.scalar_one_or_none()

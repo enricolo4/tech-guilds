@@ -1,18 +1,17 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Optional
 from services.registration.domain.model.hero import Hero
 
 
 @dataclass
 class RegisterHeroCommand:
     """Comando de entrada para cadastro ou onboarding de um novo herói."""
-    email: Optional[str] = None
-    name: Optional[str] = None
-    hero_class: Optional[str] = "NOVICE"
-    avatar_url: Optional[str] = None
-    sso_token: Optional[str] = None
-    sso_provider: Optional[str] = None
+    email: str | None = None
+    name: str | None = None
+    hero_class: str | None = "NOVICE"
+    avatar_url: str | None = None
+    sso_token: str | None = None
+    sso_provider: str | None = None
 
 
 @dataclass

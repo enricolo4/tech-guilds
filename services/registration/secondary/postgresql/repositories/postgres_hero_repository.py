@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Dict, List
 from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,13 +14,13 @@ class PostgresHeroRepository(HeroRepository):
     def __init__(self, session: AsyncSession):
         self._session = session
 
-    async def get_by_id(self, hero_id: UUID) -> Optional[Hero]:
+    async def get_by_id(self, hero_id: UUID) -> Hero | None:
         stmt = select(HeroModel).where(HeroModel.id == hero_id)
         result = await self._session.execute(stmt)
         model = result.scalar_one_or_none()
         return model.to_domain() if model else None
 
-    async def get_by_email(self, email: str) -> Optional[Hero]:
+    async def get_by_email(self, email: str) -> Hero | None:
         clean_email = email.strip().lower()
         stmt = select(HeroModel).where(HeroModel.email == clean_email)
         result = await self._session.execute(stmt)
@@ -68,16 +68,16 @@ class PostgresHeroRepository(HeroRepository):
 class InMemoryHeroRepository(HeroRepository):
     """Implementação em memória da porta HeroRepository para testes rápidos e isolados."""
 
-    def __init__(self, initial_heroes: Optional[List[Hero]] = None):
+    def __init__(self, initial_heroes: List[Hero] | None = None):
         self._storage: Dict[UUID, Hero] = {}
         if initial_heroes:
             for hero in initial_heroes:
                 self._storage[hero.id] = hero
 
-    async def get_by_id(self, hero_id: UUID) -> Optional[Hero]:
+    async def get_by_id(self, hero_id: UUID) -> Hero | None:
         return self._storage.get(hero_id)
 
-    async def get_by_email(self, email: str) -> Optional[Hero]:
+    async def get_by_email(self, email: str) -> Hero | None:
         clean_email = email.strip().lower()
         for hero in self._storage.values():
             if hero.email.strip().lower() == clean_email:

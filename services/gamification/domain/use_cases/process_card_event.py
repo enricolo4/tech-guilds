@@ -1,4 +1,3 @@
-from typing import Optional
 
 from services.gamification.domain.model.quest import (
     Quest,
@@ -59,7 +58,7 @@ class ProcessCardEventUseCase(ProcessCardEventPort):
             if hero.guild_id is None:
                 hero.guild_id = cmd.guild_id
 
-        reward: Optional[QuestReward] = None
+        reward: QuestReward | None = None
         hero_leveled_up = False
 
         # Se a tarefa foi concluída -> Distribui XP e Ouro
