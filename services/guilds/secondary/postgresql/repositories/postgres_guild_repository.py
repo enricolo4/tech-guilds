@@ -90,6 +90,9 @@ class PostgresGuildRepository(GuildRepository):
         model = result.scalar_one_or_none()
         return _map_guild_model_to_domain(model) if model else None
 
+    async def get_by_id(self, guild_id: UUID) -> Optional[Guild]:
+        return await self.find_by_id(guild_id)
+
     async def find_by_name(self, name: str) -> Optional[Guild]:
         stmt = (
             select(GuildModel)
@@ -160,6 +163,27 @@ class PostgresGuildMemberRepository(GuildMemberRepository):
         stmt = select(GuildMemberModel).where(GuildMemberModel.hero_id == hero_id)
         result = await self.session.execute(stmt)
         model = result.scalar_one_or_none()
+        if not model:
+            try:
+                from sqlalchemy import text
+                hero_stmt = text("SELECT name, email, hero_class, avatar_url FROM registration.heroes WHERE id = :hid")
+                res = await self.session.execute(hero_stmt, {"hid": hero_id})
+                row = res.first()
+                if row:
+                    model = GuildMemberModel(
+                        hero_id=hero_id,
+                        name=row[0],
+                        email=row[1],
+                        hero_class=row[2] or "NOVICE",
+                        avatar_url=row[3],
+                        level=1,
+                        guild_id=None,
+                    )
+                    self.session.add(model)
+                    await self.session.flush()
+                    await self.session.refresh(model)
+            except Exception:
+                pass
         return _map_member_model_to_domain(model) if model else None
 
     async def find_by_guild_id(self, guild_id: UUID) -> List[GuildMember]:
@@ -172,13 +196,43 @@ class PostgresGuildMemberRepository(GuildMemberRepository):
         models = result.scalars().all()
         return [_map_member_model_to_domain(m) for m in models]
 
+    async def list_by_guild(self, guild_id: UUID) -> List[GuildMember]:
+        return await self.find_by_guild_id(guild_id)
+
     async def update_guild_assignment(self, hero_id: UUID, guild_id: Optional[UUID]) -> Optional[GuildMember]:
         stmt = select(GuildMemberModel).where(GuildMemberModel.hero_id == hero_id)
         result = await self.session.execute(stmt)
         model = result.scalar_one_or_none()
         if not model:
-            return None
-        model.guild_id = guild_id
+            name = f"Hero {str(hero_id)[:8]}"
+            email = f"hero-{str(hero_id)[:8]}@guild.local"
+            hero_class = "WARRIOR"
+            avatar_url = None
+            try:
+                from sqlalchemy import text
+                hero_stmt = text("SELECT name, email, hero_class, avatar_url FROM registration.heroes WHERE id = :hid")
+                res = await self.session.execute(hero_stmt, {"hid": hero_id})
+                row = res.first()
+                if row:
+                    name = row[0] or name
+                    email = row[1] or email
+                    hero_class = row[2] or hero_class
+                    avatar_url = row[3]
+            except Exception:
+                pass
+
+            model = GuildMemberModel(
+                hero_id=hero_id,
+                name=name,
+                email=email,
+                hero_class=hero_class,
+                avatar_url=avatar_url,
+                level=1,
+                guild_id=guild_id,
+            )
+            self.session.add(model)
+        else:
+            model.guild_id = guild_id
         await self.session.flush()
         await self.session.refresh(model)
         return _map_member_model_to_domain(model)
@@ -202,6 +256,9 @@ class InMemoryGuildRepository(GuildRepository):
 
     async def find_by_id(self, guild_id: UUID) -> Optional[Guild]:
         return self._guilds.get(guild_id)
+
+    async def get_by_id(self, guild_id: UUID) -> Optional[Guild]:
+        return await self.find_by_id(guild_id)
 
     async def find_by_name(self, name: str) -> Optional[Guild]:
         for g in self._guilds.values():
@@ -232,6 +289,9 @@ class InMemoryGuildMemberRepository(GuildMemberRepository):
 
     async def find_by_guild_id(self, guild_id: UUID) -> List[GuildMember]:
         return [m for m in self._members.values() if m.guild_id == guild_id]
+
+    async def list_by_guild(self, guild_id: UUID) -> List[GuildMember]:
+        return await self.find_by_guild_id(guild_id)
 
     async def update_guild_assignment(self, hero_id: UUID, guild_id: Optional[UUID]) -> Optional[GuildMember]:
         member = self._members.get(hero_id)

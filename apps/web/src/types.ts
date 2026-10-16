@@ -110,3 +110,19 @@ export interface DashboardPayload {
   shop_items: ShopItem[];
   combat_log: CombatLogEntry[];
 }
+
+export interface UserClaims {
+  email: string;
+  name: string;
+  provider: string;
+  provider_user_id: string;
+  avatar_url?: string;
+}
+
+export interface AuthSession {
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+  session_id: string;
+  user: UserClaims;
+}

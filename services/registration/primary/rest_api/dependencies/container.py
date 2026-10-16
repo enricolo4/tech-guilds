@@ -6,7 +6,11 @@ from services.registration.domain.ports.secondary.hero_repository import HeroRep
 from services.registration.domain.ports.secondary.sso_port import SSOIdentityPort
 from services.registration.domain.ports.secondary.event_publisher_port import EventPublisherPort
 from services.registration.domain.use_cases.register_hero import RegisterHeroUseCase
+from fastapi import Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+from services.registration.secondary.postgresql.database import get_db_session
 from services.registration.secondary.postgresql.repositories.postgres_hero_repository import (
+    PostgresHeroRepository,
     InMemoryHeroRepository,
 )
 from services.registration.secondary.sso.sso_adapter import MultiProviderSSOAdapter
@@ -77,14 +81,27 @@ def get_container() -> RegistrationContainer:
     return RegistrationContainer.get_instance()
 
 
-def get_register_hero_port() -> RegisterHeroPort:
-    """Injetor FastAPI da Porta Primária de Registro de Herói."""
-    return RegistrationContainer.get_instance().register_hero_port
-
-
-def get_hero_repository() -> HeroRepository:
+def get_hero_repository(
+    session: Optional[AsyncSession] = Depends(get_db_session),
+) -> HeroRepository:
     """Injetor FastAPI da Porta Secundária do Repositório de Heróis."""
+    if session is not None and os.getenv("TESTING", "false").lower() != "true":
+        return PostgresHeroRepository(session)
     return RegistrationContainer.get_instance().hero_repo
+
+
+def get_register_hero_port(
+    repo: HeroRepository = Depends(get_hero_repository),
+) -> RegisterHeroPort:
+    """Injetor FastAPI da Porta Primária de Registro de Herói."""
+    container = RegistrationContainer.get_instance()
+    if isinstance(repo, PostgresHeroRepository):
+        return RegisterHeroUseCase(
+            hero_repository=repo,
+            sso_port=container.sso_adapter,
+            event_publisher=container.event_publisher,
+        )
+    return container.register_hero_port
 
 
 def get_sso_port() -> SSOIdentityPort:

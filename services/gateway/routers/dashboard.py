@@ -5,7 +5,7 @@ de dados (guilda, heróis, mini-boss arena, épico e armory/shop).
 """
 
 from pathlib import Path
-from uuid import UUID
+from uuid import UUID, uuid4
 from typing import Dict, Any, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse, FileResponse
@@ -15,9 +15,12 @@ from services.guilds.primary.rest_api.dependencies.container import (
     DependencyContainer as GuildsContainer,
 )
 from services.gamification.primary.rest_api.dependencies.container import (
-    get_in_memory_container as get_gamification_container,
+    get_gamification_container,
     GamificationContainer,
 )
+from services.gamification.domain.model.mini_boss import MiniBoss, BossSeverity
+from services.gamification.domain.model.quest import Quest, QuestStatus, QuestDifficulty, QuestReward
+from services.gamification.domain.ports.primary.sync_hero_progression_port import SyncHeroProgressionCommand
 
 router = APIRouter(prefix="/dashboard", tags=["RPG Dashboard"])
 
@@ -460,32 +463,129 @@ async def get_dashboard_data(
         )
 
     # Membros da guilda
-    members = await guilds_container.member_repository.list_by_guild(guild.id)
+    members = await guilds_container.member_repository.find_by_guild_id(guild.id)
     heroes_data = []
     for m in members:
+        # Busca a ficha de RPG real no microsserviço de gamificação
+        hero_prog = await gamification_container.hero_repo.get_by_id(m.hero_id)
+        if hero_prog is None:
+            try:
+                sync_res = await gamification_container.sync_hero_progression.execute(
+                    SyncHeroProgressionCommand(
+                        hero_id=m.hero_id,
+                        name=m.name,
+                        email=m.email,
+                        hero_class=m.hero_class,
+                        level=m.level,
+                    )
+                )
+                hero_prog = sync_res.hero
+            except Exception:
+                hero_prog = None
+
+        h_level = hero_prog.level if hero_prog else m.level
+        h_exp = hero_prog.exp if hero_prog else 0
+        h_exp_next = hero_prog.experience_to_next_level if hero_prog else 100
+        h_hp = hero_prog.hp if hero_prog else 100
+        h_max_hp = hero_prog.max_hp if hero_prog else 100
+        h_mana = hero_prog.mana if hero_prog else 50
+        h_max_mana = hero_prog.max_mana if hero_prog else 50
+        h_gold = hero_prog.gold if hero_prog else 0
+        h_stats = (
+            hero_prog.stats.to_dict()
+            if hero_prog and hasattr(hero_prog.stats, "to_dict")
+            else {"strength": 12, "intelligence": 12, "constitution": 12, "perception": 12}
+        )
+
         heroes_data.append({
             "id": str(m.hero_id),
             "name": m.name,
             "email": m.email,
             "hero_class": m.hero_class,
             "hero_class_label": _class_label(m.hero_class),
-            "level": 1,
-            "experience": 0,
-            "experience_to_next_level": 100,
-            "health": 100,
-            "max_health": 100,
-            "health_percent": 100.0,
-            "mana": 50,
-            "max_mana": 50,
-            "gold": 0,
-            "stats": {"strength": 10, "intelligence": 10, "constitution": 10, "perception": 10},
+            "level": h_level,
+            "experience": h_exp,
+            "experience_to_next_level": h_exp_next,
+            "health": h_hp,
+            "max_health": h_max_hp,
+            "health_percent": round((h_hp / max(1, h_max_hp)) * 100.0, 1),
+            "mana": h_mana,
+            "max_mana": h_max_mana,
+            "gold": h_gold,
+            "stats": h_stats,
             "equipped_items": _default_gear(m.hero_class),
             "status": "CODING",
-            "avatar_url": f"https://api.dicebear.com/7.x/pixel-art/svg?seed={m.name}"
+            "avatar_url": m.avatar_url or f"https://api.dicebear.com/7.x/pixel-art/svg?seed={m.name}"
         })
 
     # Bosses e Quests
-    bosses = await gamification_container.mini_boss_repo.list_active()
+    bosses = await gamification_container.boss_repo.list_active_by_guild(guild.id)
+    quests = await gamification_container.quest_repo.list_by_guild(guild.id)
+
+    # Se a guilda ainda não possui tarefas ou mini-bosses no banco, gera o starter pack
+    if not quests and not bosses:
+        starter_boss = MiniBoss(
+            id=uuid4(),
+            external_id=f"BUG-{str(guild.id)[:4].upper()}",
+            title="Lord Memory Leak: Zombie Threads in Production",
+            severity=BossSeverity.CRITICAL,
+            max_health=200,
+            current_health=200,
+            is_defeated=False,
+            bounty_hero_xp=150,
+            bounty_guild_xp=300,
+            bounty_gold=180,
+            guild_id=guild.id,
+        )
+        await gamification_container.boss_repo.save(starter_boss)
+        bosses = [starter_boss]
+
+        starter_quests = [
+            Quest(
+                id=uuid4(),
+                external_id=f"TG-{str(guild.id)[:3].upper()}-101",
+                external_source="LINEAR",
+                title="Configurar autenticação corporativa via SSO & JWT",
+                guild_id=guild.id,
+                status=QuestStatus.DONE,
+                difficulty=QuestDifficulty.HARD,
+                is_pair_programming=True,
+            ),
+            Quest(
+                id=uuid4(),
+                external_id=f"TG-{str(guild.id)[:3].upper()}-102",
+                external_source="GITHUB",
+                title="Construir componentes interativos do Dashboard em React & Tailwind",
+                guild_id=guild.id,
+                status=QuestStatus.IN_PROGRESS,
+                difficulty=QuestDifficulty.MEDIUM,
+                is_pair_programming=False,
+            ),
+            Quest(
+                id=uuid4(),
+                external_id=f"TG-{str(guild.id)[:3].upper()}-103",
+                external_source="LINEAR",
+                title="Implementar persistência nos schemas PostgreSQL e mensageria NATS",
+                guild_id=guild.id,
+                status=QuestStatus.TODO,
+                difficulty=QuestDifficulty.MEDIUM,
+                is_pair_programming=True,
+            ),
+            Quest(
+                id=uuid4(),
+                external_id=f"TG-{str(guild.id)[:3].upper()}-104",
+                external_source="GITHUB",
+                title="Criar suíte de testes de integração com Testcontainers",
+                guild_id=guild.id,
+                status=QuestStatus.TODO,
+                difficulty=QuestDifficulty.HARD,
+                is_pair_programming=False,
+            ),
+        ]
+        for q in starter_quests:
+            await gamification_container.quest_repo.save(q)
+        quests = starter_quests
+
     active_boss_data = None
     if bosses:
         boss = bosses[0]
@@ -494,7 +594,7 @@ async def get_dashboard_data(
             "id": str(boss.id),
             "external_id": boss.external_id,
             "title": boss.title,
-            "severity": boss.severity.value,
+            "severity": boss.severity.value if hasattr(boss.severity, "value") else str(boss.severity),
             "max_health": boss.max_health,
             "current_health": boss.current_health,
             "health_percent": round((boss.current_health / b_max) * 100.0, 1),
@@ -502,29 +602,45 @@ async def get_dashboard_data(
             "bounty_hero_xp": boss.bounty_hero_xp,
             "bounty_guild_xp": boss.bounty_guild_xp,
             "bounty_gold": boss.bounty_gold,
-            "avatar": "👾" if boss.severity.value in ("CRITICAL", "HIGH") else "🐛",
+            "avatar": "👾" if str(boss.severity) in ("CRITICAL", "HIGH") else "🐛",
         }
 
-    quests = await gamification_container.quest_repo.list_active()
     quests_data = []
     for q in quests:
+        rew = q.calculate_rewards()
         quests_data.append({
             "id": str(q.id),
             "external_id": q.external_id,
-            "external_source": "SYSTEM",
+            "external_source": q.external_source,
             "title": q.title,
-            "status": q.status.value,
-            "difficulty": q.difficulty.value,
+            "status": q.status.value if hasattr(q.status, "value") else str(q.status),
+            "difficulty": q.difficulty.value if hasattr(q.difficulty, "value") else str(q.difficulty),
             "quest_type": "TASK",
             "assignee_name": None,
-            "is_pair_programming": False,
+            "is_pair_programming": q.is_pair_programming,
             "rewards": {
-                "hero_xp": q.reward.hero_xp,
-                "hero_gold": q.reward.hero_gold,
-                "guild_xp": q.reward.guild_xp,
-                "guild_gold": q.reward.guild_gold,
+                "hero_xp": rew.hero_xp,
+                "hero_gold": rew.hero_gold,
+                "guild_xp": rew.guild_xp,
+                "guild_gold": rew.guild_gold,
             }
         })
+
+    total_q = len(quests)
+    done_q = sum(1 for q in quests if (q.status.value if hasattr(q.status, "value") else str(q.status)) == "DONE")
+    progress_pct = round((done_q / max(1, total_q)) * 100.0, 1)
+
+    active_adventure_data = {
+        "id": str(guild.id),
+        "external_id": f"SPRINT-{guild.level}",
+        "title": f"Sprint Ciclo {guild.level}: Conquista de Infraestrutura & Features",
+        "total_quests": total_q,
+        "completed_quests": done_q,
+        "progress_percentage": progress_pct,
+        "is_completed": done_q == total_q and total_q > 0,
+        "reward_guild_xp": 500,
+        "reward_guild_gold": 300,
+    }
 
     g_exp_next = max(1, guild.experience_to_next_level)
     exp_percent = round(min(100.0, (guild.experience / g_exp_next) * 100.0), 1)
@@ -540,18 +656,18 @@ async def get_dashboard_data(
             "experience_percent": exp_percent,
             "treasury_gold": guild.treasury_gold,
             "active_members_count": len(members),
-            "active_adventure_title": None,
-            "active_boss_count": len(bosses),
+            "active_adventure_title": active_adventure_data["title"],
+            "active_boss_count": len([b for b in bosses if not b.is_defeated]),
         },
         "heroes": heroes_data,
         "active_boss": active_boss_data,
-        "active_adventure": None,
+        "active_adventure": active_adventure_data,
         "quests": quests_data,
         "shop_items": DEFAULT_SHOP_ITEMS,
         "combat_log": [
             {
-                "timestamp": "12:00:00",
-                "message": f"Guilda '{guild.name}' conectada com sucesso ao RPG Dashboard!",
+                "timestamp": "Agora",
+                "message": f"Guilda '{guild.name}' sincronizada com o banco PostgreSQL e NATS JetStream!",
                 "type": "loot",
             }
         ],

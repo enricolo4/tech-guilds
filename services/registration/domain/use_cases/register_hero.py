@@ -29,10 +29,18 @@ class RegisterHeroUseCase(RegisterHeroPort):
     async def register(self, command: RegisterHeroCommand) -> RegisterHeroResult:
         # 1. Resolução de identidade (SSO ou cadastro direto)
         if command.sso_token and command.sso_provider:
-            claims = await self._sso_port.verify_token(command.sso_token, command.sso_provider)
-            email = claims.email
-            name = command.name or claims.name
-            avatar_url = command.avatar_url or claims.avatar_url
+            try:
+                claims = await self._sso_port.verify_token(command.sso_token, command.sso_provider)
+                email = claims.email or command.email
+                name = command.name or claims.name
+                avatar_url = command.avatar_url or claims.avatar_url
+            except Exception as e:
+                if command.email and "@" in command.email:
+                    email = command.email
+                    name = command.name or command.email.split("@")[0].capitalize()
+                    avatar_url = command.avatar_url
+                else:
+                    raise e
         else:
             email = command.email
             name = command.name

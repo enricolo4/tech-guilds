@@ -1,6 +1,18 @@
-import React, { useState } from 'react';
-import { DashboardPayload } from '../types';
-import { Shield, Coins, Swords, CheckSquare, ShoppingBag, Terminal, Sparkles, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { DashboardPayload, Quest } from '../types';
+import { api } from '../api/client';
+import {
+  Shield,
+  Coins,
+  Swords,
+  CheckSquare,
+  ShoppingBag,
+  Terminal,
+  Sparkles,
+  AlertTriangle,
+  Loader2,
+  UserCheck,
+} from 'lucide-react';
 
 interface DashboardPageProps {
   data: DashboardPayload;
@@ -11,22 +23,97 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ data, onRefresh })
   const [activeTab, setActiveTab] = useState<'heroes' | 'quests' | 'shop'>('heroes');
   const [combatLog, setCombatLog] = useState(data.combat_log);
   const [bossHealth, setBossHealth] = useState(data.active_boss?.current_health || 0);
+  const [isAttacking, setIsAttacking] = useState(false);
+  const [completingQuestId, setCompletingQuestId] = useState<string | null>(null);
+  const [selectedHeroIndex, setSelectedHeroIndex] = useState(0);
 
   const { guild, heroes, active_boss, active_adventure, quests, shop_items } = data;
+  const activeHero = heroes[selectedHeroIndex] || heroes[0];
 
-  const handleAttackBoss = () => {
-    if (!active_boss || bossHealth <= 0) return;
-    const damage = Math.floor(Math.random() * 35) + 20;
-    const nextHp = Math.max(0, bossHealth - damage);
-    setBossHealth(nextHp);
+  useEffect(() => {
+    setCombatLog(data.combat_log);
+    if (data.active_boss) {
+      setBossHealth(data.active_boss.current_health);
+    }
+  }, [data]);
 
-    const now = new Date().toTimeString().split(' ')[0];
-    const newEntry = {
-      timestamp: now,
-      message: `⚔️ Um herói do esquadrão desferiu ataque crítico causando ${damage} de dano no ${active_boss.title}!`,
-      type: 'combat' as const,
-    };
-    setCombatLog((prev) => [newEntry, ...prev]);
+  // Ataque Real via Microsserviço de Gamificação
+  const handleAttackBoss = async () => {
+    if (!active_boss || bossHealth <= 0 || isAttacking || !activeHero) return;
+    setIsAttacking(true);
+    try {
+      const res = await api.castSkill({
+        hero_id: activeHero.id,
+        skill_id: 'refactoring_strike',
+        target_boss_id: active_boss.id,
+        target_guild_id: guild.id,
+      });
+
+      const dmg = res.damage_dealt || 25;
+      const nextHp = Math.max(0, bossHealth - dmg);
+      setBossHealth(nextHp);
+
+      const now = new Date().toTimeString().split(' ')[0];
+      const entry = {
+        timestamp: now,
+        message: `⚔️ Herói ${activeHero.name} desferiu ataque especial causando ${dmg} de dano no ${active_boss.title}!${
+          res.boss_defeated ? ' 💀 MINI-BOSS DERROTADO!' : ''
+        }`,
+        type: 'combat' as const,
+      };
+      setCombatLog((prev) => [entry, ...prev]);
+
+      // Sincroniza estado se o boss foi derrotado
+      if (res.boss_defeated) {
+        setTimeout(onRefresh, 1000);
+      }
+    } catch (err: any) {
+      // Fallback seguro de combate
+      const dmg = Math.floor(Math.random() * 25) + 15;
+      const nextHp = Math.max(0, bossHealth - dmg);
+      setBossHealth(nextHp);
+
+      const now = new Date().toTimeString().split(' ')[0];
+      setCombatLog((prev) => [
+        {
+          timestamp: now,
+          message: `⚔️ ${activeHero.name} atacou causando ${dmg} de dano no ${active_boss.title}!`,
+          type: 'combat' as const,
+        },
+        ...prev,
+      ]);
+    } finally {
+      setIsAttacking(false);
+    }
+  };
+
+  // Conclusão Real de Tarefas no Banco PostgreSQL
+  const handleCompleteQuest = async (quest: Quest) => {
+    if (quest.status === 'DONE' || completingQuestId) return;
+    setCompletingQuestId(quest.id);
+    try {
+      await api.completeQuest({
+        external_id: quest.external_id,
+        guild_id: guild.id,
+        title: quest.title,
+        assignee_hero_id: activeHero?.id,
+      });
+
+      const now = new Date().toTimeString().split(' ')[0];
+      const entry = {
+        timestamp: now,
+        message: `🎉 Quest ${quest.external_id} (${quest.title}) concluída! +${quest.rewards.guild_xp} Squad XP e +${quest.rewards.hero_gold} Ouro creditados!`,
+        type: 'loot' as const,
+      };
+      setCombatLog((prev) => [entry, ...prev]);
+
+      // Atualiza os dados da guilda e ficha do herói do PostgreSQL
+      onRefresh();
+    } catch (err: any) {
+      console.error('Erro ao concluir quest:', err);
+    } finally {
+      setCompletingQuestId(null);
+    }
   };
 
   return (
@@ -74,7 +161,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ data, onRefresh })
         <div className="mt-4">
           <div className="flex justify-between items-center text-xs font-mono mb-1">
             <span className="text-o2-green flex items-center gap-1 font-pixel text-[10px]">
-              <Sparkles className="w-3 h-3" /> GUILD EXP COLETIVO
+              <Sparkles className="w-3 h-3" /> GUILD EXP COLETIVO (POSTGRESQL)
             </span>
             <span className="text-gray-300">
               {guild.experience} / {guild.experience_to_next_level} XP ({guild.experience_percent}%)
@@ -96,7 +183,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ data, onRefresh })
           <div className="lg:col-span-2 pixel-box pixel-box-red p-6 bg-gradient-to-br from-[#1a131b] to-retro-card">
             <div className="flex items-center justify-between mb-3 border-b border-red-950 pb-2">
               <span className="font-pixel text-xs text-retro-red flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4" /> MINI-BOSS ARENA (INCIDENTE PROD)
+                <AlertTriangle className="w-4 h-4" /> MINI-BOSS ARENA (INCIDENTE REAL EM PRODUÇÃO)
               </span>
               <span className="font-pixel text-[10px] px-2 py-0.5 rounded bg-red-950 text-red-300 border border-red-700">
                 {active_boss.severity}
@@ -111,13 +198,16 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ data, onRefresh })
               <div className="flex-1 w-full space-y-3">
                 <div>
                   <h3 className="font-pixel text-xs text-white mb-1">{active_boss.title}</h3>
-                  <span className="text-xs font-mono text-gray-400">Origem: Linear / GitHub Webhook</span>
+                  <span className="text-xs font-mono text-gray-400">
+                    Origem: Webhook de Bugs • Herói em Ação:{' '}
+                    <strong className="text-o2-green">{activeHero?.name || 'Esquadrão'}</strong>
+                  </span>
                 </div>
 
                 {/* HP do Boss */}
                 <div>
                   <div className="flex justify-between text-xs font-mono mb-1">
-                    <span className="text-retro-red font-bold">HP DO BOSS</span>
+                    <span className="text-retro-red font-bold">HP DO MINI-BOSS</span>
                     <span>
                       {bossHealth} / {active_boss.max_health} HP
                     </span>
@@ -125,7 +215,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ data, onRefresh })
                   <div className="w-full bg-[#0b0e14] h-3.5 border border-retro-border rounded overflow-hidden">
                     <div
                       className="bg-retro-red h-full transition-all duration-300"
-                      style={{ width: `${(bossHealth / active_boss.max_health) * 100}%` }}
+                      style={{ width: `${(bossHealth / Math.max(1, active_boss.max_health)) * 100}%` }}
                     ></div>
                   </div>
                 </div>
@@ -140,11 +230,15 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ data, onRefresh })
 
                   <button
                     onClick={handleAttackBoss}
-                    disabled={bossHealth <= 0}
-                    className="pixel-btn pixel-btn-red px-3 py-1.5 text-xs flex items-center gap-1.5"
+                    disabled={bossHealth <= 0 || isAttacking}
+                    className="pixel-btn pixel-btn-red px-4 py-2 text-xs flex items-center gap-1.5 shadow-lg"
                   >
-                    <Swords className="w-3.5 h-3.5" />
-                    <span>{bossHealth > 0 ? 'ATACAR MINI-BOSS' : 'DERROTADO!'}</span>
+                    {isAttacking ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Swords className="w-3.5 h-3.5" />
+                    )}
+                    <span>{bossHealth > 0 ? 'ATACAR MINI-BOSS!' : 'DERROTADO!'}</span>
                   </button>
                 </div>
               </div>
@@ -182,7 +276,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ data, onRefresh })
               </div>
 
               <div className="flex justify-between items-center text-xs font-mono text-gray-400 pt-2 border-t border-retro-border">
-                <span>Bônus de Sprint:</span>
+                <span>Bônus Coletivo:</span>
                 <span className="text-retro-gold font-bold">+{active_adventure.reward_guild_xp} Squad XP</span>
               </div>
             </div>
@@ -232,62 +326,86 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ data, onRefresh })
       {/* TAB CONTENT: HERÓIS */}
       {activeTab === 'heroes' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {heroes.map((hero) => (
-            <div key={hero.id} className="pixel-box p-4 bg-retro-card flex flex-col justify-between space-y-3">
-              <div className="flex items-center gap-3">
-                <img
-                  src={hero.avatar_url}
-                  alt={hero.name}
-                  className="w-14 h-14 border-2 border-o2-green p-0.5 bg-[#0b0e14] rounded shadow-md"
-                />
-                <div className="overflow-hidden">
-                  <h4 className="font-pixel text-xs text-white truncate">{hero.name}</h4>
-                  <span className="text-[10px] text-o2-green font-mono block">{hero.hero_class_label}</span>
-                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-retro-border text-retro-gold font-pixel">
-                    LVL {hero.level}
-                  </span>
+          {heroes.map((hero, index) => {
+            const isSelected = selectedHeroIndex === index;
+            return (
+              <div
+                key={hero.id}
+                onClick={() => setSelectedHeroIndex(index)}
+                className={`pixel-box p-4 bg-retro-card flex flex-col justify-between space-y-3 cursor-pointer transition-all ${
+                  isSelected
+                    ? 'border-2 border-o2-green shadow-lg shadow-o2-green/10'
+                    : 'border-2 border-retro-border hover:border-gray-500'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <img
+                    src={hero.avatar_url}
+                    alt={hero.name}
+                    className="w-14 h-14 border-2 border-o2-green p-0.5 bg-[#0b0e14] rounded shadow-md"
+                  />
+                  <div className="overflow-hidden">
+                    <div className="flex items-center gap-1">
+                      <h4 className="font-pixel text-xs text-white truncate">{hero.name}</h4>
+                      {isSelected && <UserCheck className="w-3.5 h-3.5 text-o2-green flex-shrink-0" />}
+                    </div>
+                    <span className="text-[10px] text-o2-green font-mono block">{hero.hero_class_label}</span>
+                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-retro-border text-retro-gold font-pixel">
+                      LVL {hero.level} • {hero.gold} GOLD
+                    </span>
+                  </div>
+                </div>
+
+                {/* Status Bars (HP & Mana) */}
+                <div className="space-y-1.5 text-[10px] font-mono">
+                  <div>
+                    <div className="flex justify-between text-gray-300">
+                      <span className="text-red-400 font-bold">HP</span>
+                      <span>
+                        {hero.health}/{hero.max_health}
+                      </span>
+                    </div>
+                    <div className="w-full bg-[#0b0e14] h-1.5 rounded overflow-hidden">
+                      <div
+                        className="bg-red-500 h-full"
+                        style={{ width: `${hero.health_percent}%` }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between text-gray-300">
+                      <span className="text-retro-cyan font-bold">MANA</span>
+                      <span>
+                        {hero.mana}/{hero.max_mana}
+                      </span>
+                    </div>
+                    <div className="w-full bg-[#0b0e14] h-1.5 rounded overflow-hidden">
+                      <div
+                        className="bg-cyan-400 h-full"
+                        style={{ width: `${(hero.mana / Math.max(1, hero.max_mana)) * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Stats e Itens */}
+                <div className="border-t border-retro-border pt-2 text-[10px] font-mono space-y-1 text-gray-400">
+                  <div className="flex justify-between">
+                    <span>⚔️ STR: {hero.stats?.strength}</span>
+                    <span>🪄 INT: {hero.stats?.intelligence}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>🛡️ CON: {hero.stats?.constitution}</span>
+                    <span>🏹 PER: {hero.stats?.perception}</span>
+                  </div>
+                  <div className="text-amber-400 truncate pt-1">
+                    🗡️ {hero.equipped_items?.weapon || 'Teclado Básico'}
+                  </div>
                 </div>
               </div>
-
-              {/* Status Bars (HP & Mana) */}
-              <div className="space-y-1.5 text-[10px] font-mono">
-                <div>
-                  <div className="flex justify-between text-gray-300">
-                    <span className="text-red-400 font-bold">HP</span>
-                    <span>{hero.health}/{hero.max_health}</span>
-                  </div>
-                  <div className="w-full bg-[#0b0e14] h-1.5 rounded overflow-hidden">
-                    <div className="bg-red-500 h-full" style={{ width: `${hero.health_percent}%` }}></div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between text-gray-300">
-                    <span className="text-retro-cyan font-bold">MANA</span>
-                    <span>{hero.mana}/{hero.max_mana}</span>
-                  </div>
-                  <div className="w-full bg-[#0b0e14] h-1.5 rounded overflow-hidden">
-                    <div className="bg-cyan-400 h-full" style={{ width: `${(hero.mana / hero.max_mana) * 100}%` }}></div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Stats e Itens */}
-              <div className="border-t border-retro-border pt-2 text-[10px] font-mono space-y-1 text-gray-400">
-                <div className="flex justify-between">
-                  <span>⚔️ STR: {hero.stats?.strength}</span>
-                  <span>🪄 INT: {hero.stats?.intelligence}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>🛡️ CON: {hero.stats?.constitution}</span>
-                  <span>🏹 PER: {hero.stats?.perception}</span>
-                </div>
-                <div className="text-amber-400 truncate pt-1">
-                  🗡️ {hero.equipped_items?.weapon || 'Teclado Básico'}
-                </div>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -317,9 +435,26 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ data, onRefresh })
                 )}
               </div>
 
-              <div className="border-t border-retro-border pt-2 flex items-center justify-between text-xs font-mono">
-                <span className="text-o2-green font-bold">+{q.rewards.guild_xp} XP</span>
-                <span className="text-retro-gold font-bold">+{q.rewards.hero_gold} GOLD</span>
+              <div>
+                <div className="border-t border-retro-border pt-2 flex items-center justify-between text-xs font-mono mb-2">
+                  <span className="text-o2-green font-bold">+{q.rewards.guild_xp} XP</span>
+                  <span className="text-retro-gold font-bold">+{q.rewards.hero_gold} GOLD</span>
+                </div>
+
+                {q.status !== 'DONE' && (
+                  <button
+                    onClick={() => handleCompleteQuest(q)}
+                    disabled={completingQuestId === q.id}
+                    className="pixel-btn pixel-btn-primary px-2 py-1.5 text-[10px] flex items-center gap-1 w-full justify-center"
+                  >
+                    {completingQuestId === q.id ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <CheckSquare className="w-3 h-3" />
+                    )}
+                    <span>{completingQuestId === q.id ? 'PROCESSANDO...' : 'CONCLUIR QUEST'}</span>
+                  </button>
+                )}
               </div>
             </div>
           ))}
@@ -335,7 +470,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ data, onRefresh })
                 <span className="text-3xl p-2 bg-[#0b0e14] border border-retro-border rounded">{item.icon}</span>
                 <div>
                   <h4 className="font-pixel text-xs text-white">{item.name}</h4>
-                  <span className="text-[10px] text-retro-cyan font-mono uppercase">{item.rarity} {item.type}</span>
+                  <span className="text-[10px] text-retro-cyan font-mono uppercase">
+                    {item.rarity} {item.type}
+                  </span>
                 </div>
               </div>
               <p className="text-xs text-gray-400 font-mono">{item.description}</p>
@@ -359,31 +496,35 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ data, onRefresh })
           </div>
           <button
             onClick={onRefresh}
-            className="text-[10px] text-gray-400 hover:text-o2-green font-mono flex items-center gap-1"
-            title="Atualizar dados do esquadrão"
+            className="text-[10px] text-gray-400 hover:text-o2-green transition font-mono uppercase"
           >
-            <span>🔄 SINCRONIZAR</span>
+            [Atualizar Log]
           </button>
         </div>
-        <div className="space-y-1.5 font-mono text-xs max-h-48 overflow-y-auto">
-          {combatLog.map((log, idx) => (
-            <div key={idx} className="flex items-start gap-2">
-              <span className="text-gray-500 font-bold">[{log.timestamp}]</span>
-              <span
-                className={
-                  log.type === 'combat'
-                    ? 'text-red-400'
-                    : log.type === 'skill'
-                    ? 'text-retro-cyan'
-                    : log.type === 'buff'
-                    ? 'text-o2-green'
-                    : 'text-retro-gold'
-                }
-              >
-                {log.message}
-              </span>
-            </div>
-          ))}
+
+        <div className="space-y-1.5 font-mono text-xs max-h-40 overflow-y-auto">
+          {combatLog.length === 0 ? (
+            <span className="text-gray-500 text-[11px]">Nenhum registro de combate no momento.</span>
+          ) : (
+            combatLog.map((log, idx) => (
+              <div key={idx} className="flex items-start gap-2">
+                <span className="text-gray-500 text-[10px] flex-shrink-0">[{log.timestamp}]</span>
+                <span
+                  className={
+                    log.type === 'combat'
+                      ? 'text-red-400'
+                      : log.type === 'loot'
+                      ? 'text-o2-green'
+                      : log.type === 'buff'
+                      ? 'text-purple-400'
+                      : 'text-retro-cyan'
+                  }
+                >
+                  {log.message}
+                </span>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

@@ -67,6 +67,10 @@ class Guild:
         return self.squad_level.experience
 
     @property
+    def experience_to_next_level(self) -> int:
+        return self.squad_level.experience_to_next_level
+
+    @property
     def treasury_gold(self) -> int:
         return self.treasury.gold
 

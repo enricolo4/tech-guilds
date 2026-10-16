@@ -53,6 +53,7 @@ class GuildResponse(BaseModel):
     member_ids: List[UUID]
 
 
+@router.post("", response_model=GuildResponse, status_code=status.HTTP_201_CREATED, include_in_schema=False)
 @router.post("/", response_model=GuildResponse, status_code=status.HTTP_201_CREATED)
 async def create_guild(
     req: CreateGuildRequest,
@@ -83,6 +84,7 @@ async def create_guild(
         )
 
 
+@router.get("", response_model=List[GuildResponse], include_in_schema=False)
 @router.get("/", response_model=List[GuildResponse])
 async def list_guilds(
     limit: int = 100,
@@ -177,3 +179,26 @@ async def list_guild_members(
         )
         for m in members
     ]
+
+
+@router.get("/heroes/{hero_id}", response_model=GuildMemberResponse)
+async def get_hero_guild_membership(
+    hero_id: UUID,
+    member_repo: GuildMemberRepository = Depends(get_guild_member_repository),
+):
+    """Retorna a guilda e projeção de membro de um herói."""
+    member = await member_repo.find_by_hero_id(hero_id)
+    if not member:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Herói '{hero_id}' não encontrado nas guildas.",
+        )
+    return GuildMemberResponse(
+        hero_id=member.hero_id,
+        name=member.name,
+        email=member.email,
+        hero_class=member.hero_class,
+        guild_id=member.guild_id,
+        level=member.level,
+        avatar_url=member.avatar_url,
+    )

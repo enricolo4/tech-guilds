@@ -31,9 +31,9 @@ class HeroProgressionModel(Base):
     skill_cooldowns = Column(JSON, default=dict, nullable=False)
     guild_id = Column(GUID, nullable=True, index=True)
 
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at = Column(
-        DateTime,
+        DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
         nullable=False,

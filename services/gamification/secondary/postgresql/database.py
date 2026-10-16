@@ -50,7 +50,9 @@ class GUID(TypeDecorator):
         if value is None:
             return value
         elif dialect.name == "postgresql":
-            return str(value)
+            if isinstance(value, uuid.UUID):
+                return value
+            return uuid.UUID(str(value))
         else:
             if isinstance(value, uuid.UUID):
                 return str(value)
@@ -72,18 +74,13 @@ async def get_db_session() -> AsyncGenerator[Optional[AsyncSession], None]:
         yield None
         return
 
-    try:
-        async with async_session_maker() as session:
-            try:
-                yield session
-                await session.commit()
-            except Exception:
-                await session.rollback()
-                raise
-            finally:
-                await session.close()
-    except Exception:
-        yield None
+    async with async_session_maker() as session:
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
 
 
 async def init_models(target_engine=None):

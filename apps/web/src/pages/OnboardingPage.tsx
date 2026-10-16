@@ -1,7 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api/client';
-import { HeroClass } from '../types';
-import { Sparkles, ArrowRight, ArrowLeft, Dices, CheckCircle, ShieldAlert } from 'lucide-react';
+import { HeroClass, AuthSession } from '../types';
+import {
+  Sparkles,
+  ArrowRight,
+  ArrowLeft,
+  Dices,
+  CheckCircle,
+  ShieldAlert,
+  Lock,
+  Check,
+  Building2,
+  Users,
+} from 'lucide-react';
 
 interface ClassOption {
   id: HeroClass;
@@ -20,7 +31,7 @@ const AVAILABLE_CLASSES: ClassOption[] = [
     title: 'WARRIOR',
     role: 'Backend Dev',
     icon: '⚔️',
-    description: 'Especialista em integridade ACID, arquiteturas resilientes e concorrência massiva.',
+    description: 'Especialista em integridade ACID, concorrência massiva e resiliência de dados.',
     starterWeapon: 'Blade of Postgres Indices',
     skill: 'Refatoração Brutal',
     stats: { strength: 24, intelligence: 12, constitution: 20, perception: 10 },
@@ -30,7 +41,7 @@ const AVAILABLE_CLASSES: ClassOption[] = [
     title: 'MAGE',
     role: 'Frontend Dev',
     icon: '🪄',
-    description: 'Mestre da experiência do usuário, animações reativas fluidas e Tailwind CSS.',
+    description: 'Mestre da reatividade de estado, animações pixel-perfect e Tailwind CSS.',
     starterWeapon: 'Staff of Tailwind CSS',
     skill: 'Script de Automação',
     stats: { strength: 11, intelligence: 25, constitution: 13, perception: 15 },
@@ -40,7 +51,7 @@ const AVAILABLE_CLASSES: ClassOption[] = [
     title: 'PALADIN',
     role: 'DevOps / SRE',
     icon: '🛡️',
-    description: 'Guardião de alta disponibilidade (99.99% Uptime) e esteiras de CI/CD blindadas.',
+    description: 'Guardião do 99.99% Uptime, clusters Kubernetes e esteiras de CI/CD blindadas.',
     starterWeapon: 'Hammer of Kubernetes',
     skill: 'Escudo de CI/CD',
     stats: { strength: 18, intelligence: 14, constitution: 24, perception: 12 },
@@ -50,7 +61,7 @@ const AVAILABLE_CLASSES: ClassOption[] = [
     title: 'RANGER',
     role: 'QA / Tester',
     icon: '🏹',
-    description: 'Atirador de precisão caçador de bugs ocultos e mestre de testes E2E.',
+    description: 'Caçador de bugs ocultos em produção e mestre de testes E2E com Cypress/Playwright.',
     starterWeapon: 'Bow of Cypress End-to-End',
     skill: 'Golpe de Edge Case',
     stats: { strength: 12, intelligence: 16, constitution: 14, perception: 24 },
@@ -60,7 +71,7 @@ const AVAILABLE_CLASSES: ClassOption[] = [
     title: 'TACTICIAN',
     role: 'Tech Lead',
     icon: '📜',
-    description: 'Estrategista que desbloqueia squads, guia a arquitetura e orquestra a sprint.',
+    description: 'Estrategista que desbloqueia a squad, guia a arquitetura e orquestra a sprint.',
     starterWeapon: 'Tome of Clean Architecture',
     skill: 'Rally de Sprint',
     stats: { strength: 16, intelligence: 20, constitution: 16, perception: 18 },
@@ -83,26 +94,83 @@ interface OnboardingPageProps {
 
 export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
   const [currentStep, setCurrentStep] = useState(1);
+
+  // Autenticação & SSO
+  const [authSession, setAuthSession] = useState<AuthSession | null>(null);
+  const [ssoProvider, setSsoProvider] = useState<'google' | 'github' | 'azure'>('github');
+  const [customToken, setCustomToken] = useState('');
+  const [showTokenInput, setShowTokenInput] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+
+  // Herói
   const [heroName, setHeroName] = useState('');
   const [heroEmail, setHeroEmail] = useState('');
-  const [avatarSeed, setAvatarSeed] = useState('Adventurer');
+  const [avatarSeed, setAvatarSeed] = useState('HeroDev');
   const [selectedClass, setSelectedClass] = useState<HeroClass>('WARRIOR');
+  const [existingHeroId, setExistingHeroId] = useState<string | null>(null);
+
+  // Esquadrão / Guilda
   const [guildMode, setGuildMode] = useState<'create' | 'join' | 'solo'>('create');
   const [newGuildName, setNewGuildName] = useState('');
   const [newGuildDescription, setNewGuildDescription] = useState('');
   const [selectedGuildId, setSelectedGuildId] = useState('');
-  const [existingGuilds, setExistingGuilds] = useState<Array<{ id: string; name: string; level: number; member_ids: string[] }>>([]);
+  const [existingGuilds, setExistingGuilds] = useState<
+    Array<{ id: string; name: string; level: number; member_ids: string[] }>
+  >([]);
+
+  // Submissão & Feedback
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [registeredHeroId, setRegisteredHeroId] = useState<string | null>(null);
+  const [finalGuildId, setFinalGuildId] = useState<string | null>(null);
 
   const avatarUrl = `https://api.dicebear.com/7.x/pixel-art/svg?seed=${encodeURIComponent(avatarSeed)}`;
-  const currentClassDetails = AVAILABLE_CLASSES.find((c) => c.id === selectedClass) || AVAILABLE_CLASSES[0];
+  const currentClassDetails =
+    AVAILABLE_CLASSES.find((c) => c.id === selectedClass) || AVAILABLE_CLASSES[0];
+
+  // Carrega guildas ativas do PostgreSQL
+  const fetchGuilds = () => {
+    api
+      .listGuilds()
+      .then((guilds) => {
+        if (Array.isArray(guilds)) {
+          setExistingGuilds(guilds);
+          if (guilds.length > 0 && !selectedGuildId) {
+            setSelectedGuildId(guilds[0].id);
+          }
+        }
+      })
+      .catch(() => {});
+  };
 
   useEffect(() => {
-    api.listGuilds().then((guilds) => {
-      if (Array.isArray(guilds)) setExistingGuilds(guilds);
-    }).catch(() => {});
+    fetchGuilds();
+
+    // Recupera sessão SSO salva, se houver
+    const savedAuth = localStorage.getItem('tech_guilds_auth');
+    if (savedAuth) {
+      try {
+        const parsed: AuthSession = JSON.parse(savedAuth);
+        setAuthSession(parsed);
+        setHeroName(parsed.user.name);
+        setHeroEmail(parsed.user.email);
+        setSsoProvider((parsed.user.provider as any) || 'github');
+        if (parsed.user.name) setAvatarSeed(parsed.user.name);
+
+        // Checa se já tem herói cadastrado
+        api
+          .getHeroByEmail(parsed.user.email)
+          .then((hero) => {
+            if (hero) {
+              setExistingHeroId(hero.id);
+              if (hero.hero_class) setSelectedClass(hero.hero_class as HeroClass);
+            }
+          })
+          .catch(() => {});
+      } catch (e) {
+        localStorage.removeItem('tech_guilds_auth');
+      }
+    }
   }, []);
 
   const handleNameChange = (name: string) => {
@@ -114,71 +182,122 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
 
   const randomizeAvatar = () => {
     const seeds = ['Gandalf', 'Conan', 'Legolas', 'Uther', 'Trinity', 'Neo', 'Ada', 'Turing'];
-    const picked = seeds[Math.floor(Math.random() * seeds.length)] + '_' + Math.floor(Math.random() * 999);
+    const picked =
+      seeds[Math.floor(Math.random() * seeds.length)] + '_' + Math.floor(Math.random() * 999);
     setAvatarSeed(picked);
   };
 
-  const fillSSO = (provider: 'google' | 'github' | 'azure') => {
-    const mockSSO = {
-      google: { name: 'Alex Google Dev', email: 'alex@company.com' },
-      github: { name: 'DevOctocat', email: 'octocat@github-enterprise.corp' },
-      azure: { name: 'Morgan Azure Cloud', email: 'morgan@enterprise.onmicrosoft.com' },
-    };
-    const user = mockSSO[provider];
-    handleNameChange(user.name);
-    setHeroEmail(user.email);
+  // Executa o Login Real via Microsserviço de Auth
+  const executeSSOLogin = async (
+    provider: 'google' | 'github' | 'azure',
+    explicitToken?: string
+  ) => {
+    setIsLoggingIn(true);
+    setErrorMessage('');
+    try {
+      const token =
+        explicitToken ||
+        customToken.trim() ||
+        `dev-${provider}-${avatarSeed.toLowerCase().replace(/[^a-z0-9]/g, '') || 'developer'}`;
+
+      const session = await api.loginSSO(provider, token);
+      setAuthSession(session);
+      setSsoProvider(provider);
+      setHeroName(session.user.name);
+      setHeroEmail(session.user.email);
+      setAvatarSeed(session.user.name || 'HeroDev');
+
+      // Persiste sessão
+      localStorage.setItem('tech_guilds_auth', JSON.stringify(session));
+
+      // Verifica se o herói já foi cadastrado no banco PostgreSQL
+      const existing = await api.getHeroByEmail(session.user.email).catch(() => null);
+      if (existing) {
+        setExistingHeroId(existing.id);
+        if (existing.hero_class) setSelectedClass(existing.hero_class as HeroClass);
+
+        // Checa se já tem guilda vinculada
+        const membership = await api.getHeroGuild(existing.id).catch(() => null);
+        if (membership && membership.guild_id) {
+          setSelectedGuildId(membership.guild_id);
+        }
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Falha ao autenticar via SSO.');
+    } finally {
+      setIsLoggingIn(false);
+    }
   };
 
   const handleNextStep = (targetStep: number) => {
     setErrorMessage('');
     if (targetStep === 2) {
-      if (heroName.trim().length < 2 || !heroEmail.includes('@')) {
-        setErrorMessage('Por favor, informe seu nome e um e-mail corporativo válido.');
+      if (!authSession && (!heroName.trim() || !heroEmail.includes('@'))) {
+        setErrorMessage(
+          'Por favor, realize o login corporativo SSO ou preencha seu nome e e-mail corporativo.'
+        );
+        return;
+      }
+      if (heroName.trim().length < 2) {
+        setErrorMessage('Nome do herói deve conter pelo menos 2 caracteres.');
         return;
       }
     }
-    if (targetStep === 4 && guildMode === 'create' && !newGuildName.trim()) {
-      setErrorMessage('Por favor, forneça o nome do seu novo esquadrão.');
-      return;
+    if (targetStep === 4) {
+      if (guildMode === 'create' && !newGuildName.trim()) {
+        setErrorMessage('Por favor, informe o nome do seu novo esquadrão.');
+        return;
+      }
+      if (guildMode === 'join' && !selectedGuildId) {
+        setErrorMessage('Por favor, selecione um esquadrão existente da lista.');
+        return;
+      }
     }
     setCurrentStep(targetStep);
   };
 
+  // Submissão Final do Fluxo Real
   const handleSubmit = async () => {
     setIsSubmitting(true);
     setErrorMessage('');
     try {
-      // 1. Cadastro no microsserviço de Registration (dispara evento NATS)
-      const hero = await api.registerHero({
+      // 1. Cadastra o herói no microsserviço de Registration
+      const token = authSession ? authSession.access_token : `dev-${ssoProvider}-token`;
+      const regRes = await api.registerHero({
         name: heroName.trim(),
         email: heroEmail.trim().toLowerCase(),
         hero_class: selectedClass,
         avatar_url: avatarUrl,
+        sso_token: token,
+        sso_provider: ssoProvider,
       });
 
-      setRegisteredHeroId(hero.id);
+      const hero = regRes.hero || regRes;
+      const heroId = hero.id;
+      setRegisteredHeroId(heroId);
+
       let targetGuildId = '';
 
-      // 2. Trata associação de guilda
+      // 2. Trata criação ou associação de guilda no microsserviço de Guilds
       if (guildMode === 'create' && newGuildName.trim()) {
-        const guild = await api.createGuild({
+        const createdGuild = await api.createGuild({
           name: newGuildName.trim(),
-          description: newGuildDescription.trim() || 'Squad de Desenvolvimento',
-          creator_hero_id: hero.id,
+          description: newGuildDescription.trim() || 'Squad de Desenvolvimento Ágil',
+          creator_hero_id: heroId,
         });
-        targetGuildId = guild.id;
+        targetGuildId = createdGuild.id;
+
+        // Associa o herói como membro fundador da guilda
+        await api.addMember(targetGuildId, heroId);
       } else if (guildMode === 'join' && selectedGuildId) {
-        await api.addMember(selectedGuildId, hero.id);
+        await api.addMember(selectedGuildId, heroId);
         targetGuildId = selectedGuildId;
       }
 
-      // 3. Sucesso!
+      setFinalGuildId(targetGuildId || null);
       setCurrentStep(5);
-      if (targetGuildId) {
-        setSelectedGuildId(targetGuildId);
-      }
     } catch (err: any) {
-      setErrorMessage(err.message || 'Falha ao forjar herói.');
+      setErrorMessage(err.message || 'Falha ao processar o registro do herói no backend.');
     } finally {
       setIsSubmitting(false);
     }
@@ -192,11 +311,11 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
           <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-retro-border -z-0"></div>
           <div
             className="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-o2-green transition-all duration-300 -z-0"
-            style={{ width: `${(currentStep - 1) * 33.3}%` }}
+            style={{ width: `${(currentStep - 1) * 25}%` }}
           ></div>
 
           {[
-            { step: 1, label: 'Identidade' },
+            { step: 1, label: 'SSO & Identidade' },
             { step: 2, label: 'Classe RPG' },
             { step: 3, label: 'Esquadrão' },
             { step: 4, label: 'Prontidão' },
@@ -205,15 +324,15 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
               <div
                 className={`w-9 h-9 rounded border-2 flex items-center justify-center font-pixel text-xs transition-colors ${
                   currentStep >= item.step
-                    ? 'border-o2-green bg-retro-card text-o2-green font-bold'
+                    ? 'border-o2-green bg-retro-card text-o2-green font-bold shadow-md shadow-o2-green/20'
                     : 'border-retro-border bg-retro-dark text-gray-500'
                 }`}
               >
                 {item.step}
               </div>
               <span
-                className={`text-xs mt-1 font-mono uppercase tracking-wider ${
-                  currentStep >= item.step ? 'text-o2-green' : 'text-gray-500'
+                className={`text-[11px] mt-1.5 font-mono uppercase tracking-wider ${
+                  currentStep >= item.step ? 'text-o2-green font-bold' : 'text-gray-500'
                 }`}
               >
                 {item.label}
@@ -225,65 +344,139 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
 
       {/* ERROS */}
       {errorMessage && (
-        <div className="p-3 mb-6 bg-red-950 border-2 border-retro-red text-red-200 text-xs font-mono rounded flex items-center gap-2">
-          <ShieldAlert className="w-4 h-4 flex-shrink-0" />
+        <div className="p-3 mb-6 bg-red-950/80 border-2 border-retro-red text-red-200 text-xs font-mono rounded flex items-center gap-2 shadow-lg animate-pulse">
+          <ShieldAlert className="w-4 h-4 flex-shrink-0 text-retro-red" />
           <span>{errorMessage}</span>
         </div>
       )}
 
-      {/* PASSO 1: IDENTIDADE */}
+      {/* PASSO 1: SSO & IDENTIDADE */}
       {currentStep === 1 && (
-        <div className="pixel-box p-6 md:p-8">
-          <h2 className="font-pixel text-sm md:text-base text-o2-green mb-2 flex items-center gap-2">
-            <span>👤</span> IDENTIFICAÇÃO DO DESENVOLVEDOR
-          </h2>
-          <p className="text-sm text-gray-400 mb-6 font-mono">
-            Todo herói precisa de um codinome e de um canal corporativo para receber ordens de missão.
-          </p>
+        <div className="pixel-box p-6 md:p-8 bg-retro-card">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 border-b border-retro-border pb-3">
+            <div>
+              <h2 className="font-pixel text-sm md:text-base text-o2-green flex items-center gap-2">
+                <span>🔐</span> LOGIN CORPORATIVO SSO & IDENTIDADE
+              </h2>
+              <p className="text-xs text-gray-400 font-mono mt-1">
+                Autentique-se com sua credencial corporativa para emitir um token JWT de sessão.
+              </p>
+            </div>
+            {authSession && (
+              <span className="inline-flex items-center gap-1.5 text-xs font-mono bg-green-950 text-green-300 border border-green-700 px-2.5 py-1 rounded">
+                <Check className="w-3.5 h-3.5" /> Sessão Ativa
+              </span>
+            )}
+          </div>
 
-          {/* Quick SSO */}
-          <div className="mb-6 p-4 bg-[#0e141f] border border-retro-border rounded">
-            <span className="text-xs font-mono text-gray-400 block mb-2 uppercase">Login Rápido via SSO Corporativo:</span>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          {/* Seletor de Provedor SSO */}
+          <div className="mb-6 p-4 bg-[#0e141f] border-2 border-retro-border rounded">
+            <span className="text-xs font-pixel text-gray-300 block mb-3 uppercase tracking-wider">
+              1. Selecione seu Provedor de Identidade Corporativo:
+            </span>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
               <button
                 type="button"
-                onClick={() => fillSSO('google')}
-                className="pixel-btn pixel-btn-dark py-2 px-3 text-xs flex items-center justify-center gap-2"
-              >
-                <span>🌐</span> Google Workspace
-              </button>
-              <button
-                type="button"
-                onClick={() => fillSSO('github')}
-                className="pixel-btn pixel-btn-dark py-2 px-3 text-xs flex items-center justify-center gap-2"
+                onClick={() => {
+                  setSsoProvider('github');
+                  executeSSOLogin('github');
+                }}
+                disabled={isLoggingIn}
+                className={`pixel-btn py-2.5 px-3 text-xs flex items-center justify-center gap-2 transition-all ${
+                  ssoProvider === 'github' && authSession
+                    ? 'border-o2-green bg-[#17261b] text-o2-green font-bold'
+                    : 'pixel-btn-dark'
+                }`}
               >
                 <span>🐙</span> GitHub Enterprise
               </button>
+
               <button
                 type="button"
-                onClick={() => fillSSO('azure')}
-                className="pixel-btn pixel-btn-dark py-2 px-3 text-xs flex items-center justify-center gap-2"
+                onClick={() => {
+                  setSsoProvider('google');
+                  executeSSOLogin('google');
+                }}
+                disabled={isLoggingIn}
+                className={`pixel-btn py-2.5 px-3 text-xs flex items-center justify-center gap-2 transition-all ${
+                  ssoProvider === 'google' && authSession
+                    ? 'border-o2-green bg-[#17261b] text-o2-green font-bold'
+                    : 'pixel-btn-dark'
+                }`}
               >
-                <span>🔷</span> Azure Active Directory
+                <span>🌐</span> Google Workspace
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setSsoProvider('azure');
+                  executeSSOLogin('azure');
+                }}
+                disabled={isLoggingIn}
+                className={`pixel-btn py-2.5 px-3 text-xs flex items-center justify-center gap-2 transition-all ${
+                  ssoProvider === 'azure' && authSession
+                    ? 'border-o2-green bg-[#17261b] text-o2-green font-bold'
+                    : 'pixel-btn-dark'
+                }`}
+              >
+                <span>🔷</span> Microsoft Azure AD
               </button>
             </div>
+
+            {/* Opção para inserir token OAuth real ou alternar modo */}
+            <div className="border-t border-retro-border/60 pt-3 flex flex-wrap items-center justify-between text-xs font-mono text-gray-400 gap-2">
+              <button
+                type="button"
+                onClick={() => setShowTokenInput(!showTokenInput)}
+                className="text-retro-cyan hover:underline flex items-center gap-1"
+              >
+                <Lock className="w-3.5 h-3.5" />
+                {showTokenInput ? 'Ocultar entrada de token' : 'Inserir Token OAuth / Personal Access Token'}
+              </button>
+
+              <span className="text-[11px] text-gray-400">
+                {isLoggingIn ? 'Autenticando no serviço de Auth...' : 'Tokens simulados (dev-*) são aceitos em ambiente local.'}
+              </span>
+            </div>
+
+            {showTokenInput && (
+              <div className="mt-3 flex gap-2">
+                <input
+                  type="text"
+                  value={customToken}
+                  onChange={(e) => setCustomToken(e.target.value)}
+                  placeholder={`Cole o token de acesso ${ssoProvider}...`}
+                  className="flex-1 bg-[#0b0e14] border border-retro-border focus:border-o2-green px-3 py-1.5 text-xs text-white font-mono rounded"
+                />
+                <button
+                  type="button"
+                  onClick={() => executeSSOLogin(ssoProvider, customToken)}
+                  className="pixel-btn pixel-btn-primary px-3 py-1 text-xs"
+                >
+                  AUTENTICAR
+                </button>
+              </div>
+            )}
           </div>
 
+          {/* Perfil e Customização do Sprite */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="flex flex-col items-center justify-center p-4 bg-[#0e141f] border-2 border-retro-border rounded text-center">
-              <span className="text-[10px] font-pixel text-gray-400 mb-2">SPRITE 16-BIT</span>
+              <span className="text-[10px] font-pixel text-gray-400 mb-2">SPRITE 16-BIT RETRÔ</span>
               <img
                 src={avatarUrl}
                 alt="Avatar Preview"
                 className="w-28 h-28 border-2 border-o2-green p-1 bg-retro-card rounded mb-3 shadow-lg"
               />
-              <span className="text-xs font-mono text-o2-green truncate max-w-full">
+              <span className="text-xs font-mono text-o2-green truncate max-w-full font-bold">
                 {heroName || 'Herói Anônimo'}
               </span>
               <button
                 type="button"
                 onClick={randomizeAvatar}
-                className="mt-2 text-xs text-retro-cyan hover:underline flex items-center gap-1"
+                className="mt-2 text-xs text-retro-cyan hover:underline flex items-center gap-1 font-mono"
               >
                 <Dices className="w-3.5 h-3.5" /> Sortear Visual
               </button>
@@ -291,7 +484,9 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
 
             <div className="md:col-span-2 space-y-4">
               <div>
-                <label className="block text-xs font-pixel text-gray-300 mb-1">NOME DO HERÓI / DEVELOPER *</label>
+                <label className="block text-xs font-pixel text-gray-300 mb-1">
+                  NOME DO HERÓI / DEVELOPER *
+                </label>
                 <input
                   type="text"
                   value={heroName}
@@ -302,20 +497,28 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
               </div>
 
               <div>
-                <label className="block text-xs font-pixel text-gray-300 mb-1">E-MAIL CORPORATIVO *</label>
+                <label className="block text-xs font-pixel text-gray-300 mb-1">
+                  E-MAIL CORPORATIVO *
+                </label>
                 <input
                   type="email"
                   value={heroEmail}
                   onChange={(e) => setHeroEmail(e.target.value)}
-                  placeholder="Ex: seu.nome@empresa.com"
+                  placeholder="Ex: alex@company.com"
                   className="w-full bg-[#0b0e14] border-2 border-retro-border focus:border-o2-green px-3 py-2 text-white font-mono text-base outline-none rounded"
                 />
               </div>
 
-              <div className="pt-2">
-                <span className="text-xs text-gray-500 font-mono">
-                  * O cadastro emitirá o evento <code>tech_guilds.hero.registered</code> no barramento NATS JetStream.
-                </span>
+              {existingHeroId && (
+                <div className="p-3 bg-blue-950/60 border border-retro-cyan text-cyan-200 text-xs font-mono rounded">
+                  ℹ️ Já existe um registro para este e-mail no schema <code>registration.heroes</code>. O
+                  fluxo sincronizará suas configurações existentes.
+                </div>
+              )}
+
+              <div className="pt-2 text-xs text-gray-500 font-mono">
+                * Concluído o registro, o evento <code>tech_guilds.hero.registered</code> será disparado
+                via NATS JetStream para inicializar suas fichas nos outros microsserviços.
               </div>
             </div>
           </div>
@@ -324,9 +527,9 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
             <button
               type="button"
               onClick={() => handleNextStep(2)}
-              className="pixel-btn pixel-btn-primary px-4 py-2 text-xs flex items-center gap-2"
+              className="pixel-btn pixel-btn-primary px-5 py-2.5 text-xs flex items-center gap-2"
             >
-              <span>ESCOLHER CLASSE</span>
+              <span>ESCOLHER CLASSE RPG</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -335,12 +538,12 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
 
       {/* PASSO 2: CLASSE RPG */}
       {currentStep === 2 && (
-        <div className="pixel-box p-6 md:p-8">
+        <div className="pixel-box p-6 md:p-8 bg-retro-card">
           <h2 className="font-pixel text-sm md:text-base text-o2-green mb-2 flex items-center gap-2">
-            <span>🪄</span> SELEÇÃO DE CLASSE & ATRIBUTOS
+            <span>🪄</span> ESPECIALIZAÇÃO DE ENGENHARIA & CLASSE
           </h2>
           <p className="text-sm text-gray-400 mb-6 font-mono">
-            Sua classe define seu papel no esquadrão, suas habilidades ativas e o tipo de tarefas que amplificam seus pontos de XP.
+            Sua classe define suas habilidades de combate em bugs e seus atributos de RPG.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
@@ -358,7 +561,9 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
                   <span className="text-3xl">{c.icon}</span>
                   <span
                     className={`text-[10px] px-2 py-0.5 rounded font-pixel ${
-                      selectedClass === c.id ? 'bg-o2-green text-black font-bold' : 'bg-retro-border text-gray-400'
+                      selectedClass === c.id
+                        ? 'bg-o2-green text-black font-bold'
+                        : 'bg-retro-border text-gray-400'
                     }`}
                   >
                     {c.role}
@@ -385,7 +590,9 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
                 <span className="text-2xl">{currentClassDetails.icon}</span>
                 <div>
                   <span className="font-pixel text-xs text-o2-green">{currentClassDetails.title}</span>
-                  <span className="text-xs text-gray-400 font-mono ml-2">({currentClassDetails.role})</span>
+                  <span className="text-xs text-gray-400 font-mono ml-2">
+                    ({currentClassDetails.role})
+                  </span>
                 </div>
               </div>
               <span className="font-pixel text-xs text-retro-gold">NÍVEL 1</span>
@@ -457,9 +664,9 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
             <button
               type="button"
               onClick={() => handleNextStep(3)}
-              className="pixel-btn pixel-btn-primary px-4 py-2 text-xs flex items-center gap-2"
+              className="pixel-btn pixel-btn-primary px-5 py-2.5 text-xs flex items-center gap-2"
             >
-              <span>CONFIGURAR ESQUADRÃO</span>
+              <span>VINCULAR A UM ESQUADRÃO</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -468,53 +675,70 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
 
       {/* PASSO 3: ESQUADRÃO / GUILDA */}
       {currentStep === 3 && (
-        <div className="pixel-box p-6 md:p-8">
+        <div className="pixel-box p-6 md:p-8 bg-retro-card">
           <h2 className="font-pixel text-sm md:text-base text-o2-green mb-2 flex items-center gap-2">
-            <span>🏰</span> ASSOCIAÇÃO A UM ESQUADRÃO (GUILDA)
+            <span>🏰</span> ESQUADRÃO (GUILDA) & COOPERAÇÃO
           </h2>
           <p className="text-sm text-gray-400 mb-6 font-mono">
-            Em Tech Guilds, os bônus de XP, recompensas de sprint e combate a Mini-Bosses acontecem cooperativamente em esquadrões.
+            Vincule seu herói a um Squad existente ou funde uma nova guilda no PostgreSQL.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
             <div
               onClick={() => setGuildMode('create')}
               className={`p-4 border-2 rounded cursor-pointer transition ${
-                guildMode === 'create' ? 'border-o2-green bg-[#17261b]' : 'border-retro-border bg-[#0e141f]'
+                guildMode === 'create'
+                  ? 'border-o2-green bg-[#17261b] shadow-md shadow-o2-green/10'
+                  : 'border-retro-border bg-[#0e141f]'
               }`}
             >
-              <span className="text-2xl block mb-1">🏗️</span>
+              <Building2 className="w-6 h-6 text-o2-green mb-2" />
               <span className="font-pixel text-xs text-white block mb-1">CRIAR NOVO SQUAD</span>
-              <p className="text-xs text-gray-400 font-mono">Fundar uma nova guilda e se tornar o líder fundador.</p>
+              <p className="text-xs text-gray-400 font-mono">
+                Fundar um novo time e se tornar o criador/líder.
+              </p>
             </div>
 
             <div
-              onClick={() => setGuildMode('join')}
+              onClick={() => {
+                setGuildMode('join');
+                fetchGuilds();
+              }}
               className={`p-4 border-2 rounded cursor-pointer transition ${
-                guildMode === 'join' ? 'border-o2-green bg-[#17261b]' : 'border-retro-border bg-[#0e141f]'
+                guildMode === 'join'
+                  ? 'border-o2-green bg-[#17261b] shadow-md shadow-o2-green/10'
+                  : 'border-retro-border bg-[#0e141f]'
               }`}
             >
-              <span className="text-2xl block mb-1">🤝</span>
+              <Users className="w-6 h-6 text-retro-cyan mb-2" />
               <span className="font-pixel text-xs text-white block mb-1">ENTRAR EM SQUAD</span>
-              <p className="text-xs text-gray-400 font-mono">Unir forças com uma equipe já existente no sistema.</p>
+              <p className="text-xs text-gray-400 font-mono">
+                Unir forças com um time já existente no banco.
+              </p>
             </div>
 
             <div
               onClick={() => setGuildMode('solo')}
               className={`p-4 border-2 rounded cursor-pointer transition ${
-                guildMode === 'solo' ? 'border-o2-green bg-[#17261b]' : 'border-retro-border bg-[#0e141f]'
+                guildMode === 'solo'
+                  ? 'border-o2-green bg-[#17261b] shadow-md shadow-o2-green/10'
+                  : 'border-retro-border bg-[#0e141f]'
               }`}
             >
-              <span className="text-2xl block mb-1">🐺</span>
+              <span className="text-2xl block mb-2">🐺</span>
               <span className="font-pixel text-xs text-white block mb-1">LOBO SOLITÁRIO</span>
-              <p className="text-xs text-gray-400 font-mono">Iniciar sem esquadrão e ingressar em uma guilda depois.</p>
+              <p className="text-xs text-gray-400 font-mono">
+                Iniciar sem esquadrão e vincular-se posteriormente.
+              </p>
             </div>
           </div>
 
           {guildMode === 'create' && (
             <div className="space-y-4 p-4 bg-[#0e141f] border border-retro-border rounded mb-6">
               <div>
-                <label className="block text-xs font-pixel text-gray-300 mb-1">NOME DO ESQUADRÃO / GUILDA *</label>
+                <label className="block text-xs font-pixel text-gray-300 mb-1">
+                  NOME DO ESQUADRÃO / GUILDA *
+                </label>
                 <input
                   type="text"
                   value={newGuildName}
@@ -524,12 +748,14 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
                 />
               </div>
               <div>
-                <label className="block text-xs font-pixel text-gray-300 mb-1">MISSÃO OU DESCRIÇÃO DO TIME</label>
+                <label className="block text-xs font-pixel text-gray-300 mb-1">
+                  MISSÃO OU DESCRIÇÃO DO TIME
+                </label>
                 <input
                   type="text"
                   value={newGuildDescription}
                   onChange={(e) => setNewGuildDescription(e.target.value)}
-                  placeholder="Ex: Responsáveis por microsserviços de alta escala e 99.99% uptime"
+                  placeholder="Ex: Squad responsável por microsserviços de alta disponibilidade"
                   className="w-full bg-[#0b0e14] border-2 border-retro-border focus:border-o2-green px-3 py-2 text-white font-mono text-base outline-none rounded"
                 />
               </div>
@@ -538,31 +764,34 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
 
           {guildMode === 'join' && (
             <div className="space-y-4 p-4 bg-[#0e141f] border border-retro-border rounded mb-6">
-              <label className="block text-xs font-pixel text-gray-300 mb-1">SELECIONE O ESQUADRÃO ALVO *</label>
+              <label className="block text-xs font-pixel text-gray-300 mb-1">
+                SELECIONE O ESQUADRÃO NO BANCO POSTGRESQL *
+              </label>
               {existingGuilds.length > 0 ? (
                 <select
                   value={selectedGuildId}
                   onChange={(e) => setSelectedGuildId(e.target.value)}
                   className="w-full bg-[#0b0e14] border-2 border-retro-border focus:border-o2-green px-3 py-2 text-white font-mono text-base outline-none rounded"
                 >
-                  <option value="">-- Escolha uma guilda ativa --</option>
                   {existingGuilds.map((g) => (
                     <option key={g.id} value={g.id}>
-                      {g.name} (Nível {g.level} • {g.member_ids?.length || 0} membros)
+                      {g.name} (Nível {g.level} • {g.member_ids?.length || 0} heróis)
                     </option>
                   ))}
                 </select>
               ) : (
-                <p className="text-xs text-amber-400 font-mono">
-                  Nenhuma guilda encontrada no banco. Recomendamos escolher "CRIAR NOVO SQUAD".
-                </p>
+                <div className="p-3 bg-amber-950/40 border border-retro-gold text-amber-300 text-xs font-mono rounded">
+                  ⚠️ Nenhuma guilda ativa encontrada no banco de dados. Recomendamos selecionar{' '}
+                  <strong>CRIAR NOVO SQUAD</strong> para fundar seu primeiro time!
+                </div>
               )}
             </div>
           )}
 
           {guildMode === 'solo' && (
             <div className="p-4 bg-[#0e141f] border border-retro-border rounded mb-6 text-xs text-gray-400 font-mono">
-              💡 Você iniciará como um herói autônomo. Poderá ser recrutado ou criar uma guilda a qualquer momento no painel.
+              💡 Você iniciará como um herói autônomo. Poderá se vincular a uma guilda ou criar um
+              esquadrão a qualquer momento através do painel.
             </div>
           )}
 
@@ -577,9 +806,9 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
             <button
               type="button"
               onClick={() => handleNextStep(4)}
-              className="pixel-btn pixel-btn-primary px-4 py-2 text-xs flex items-center gap-2"
+              className="pixel-btn pixel-btn-primary px-5 py-2.5 text-xs flex items-center gap-2"
             >
-              <span>REVISAR FICHA</span>
+              <span>REVISAR FICHA & FORJAR</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -588,12 +817,13 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
 
       {/* PASSO 4: CONFIRMAÇÃO & FORJA */}
       {currentStep === 4 && (
-        <div className="pixel-box p-6 md:p-8">
+        <div className="pixel-box p-6 md:p-8 bg-retro-card">
           <h2 className="font-pixel text-sm md:text-base text-o2-green mb-2 flex items-center gap-2">
-            <span>📜</span> FICHA FINAL DO PERSONAGEM
+            <span>📜</span> CONFIRMAÇÃO & DISPARO DE EVENTOS
           </h2>
           <p className="text-sm text-gray-400 mb-6 font-mono">
-            Confira seus dados antes de registrar seu herói e disparar a propagação de eventos no NATS JetStream.
+            Ao confirmar, seu Herói será persistido em <code>registration.heroes</code> e o evento de
+            domínio será emitido no NATS JetStream para inicialização no PostgreSQL.
           </p>
 
           <div className="p-6 bg-[#0e141f] border-2 border-o2-green rounded mb-6 shadow-xl">
@@ -612,10 +842,10 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
                   </span>
                   <span className="text-[10px] px-2 py-0.5 rounded font-pixel bg-retro-border text-retro-gold">
                     {guildMode === 'create'
-                      ? `Squad: ${newGuildName}`
+                      ? `Novo Squad: ${newGuildName}`
                       : guildMode === 'join'
-                      ? 'Ingressando em Squad'
-                      : 'Solo'}
+                      ? 'Ingressando em Squad Existente'
+                      : 'Lobo Solitário'}
                   </span>
                 </div>
               </div>
@@ -631,14 +861,11 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
                 <span className="text-retro-cyan font-bold">{currentClassDetails.skill}</span>
               </div>
               <div>
-                <span className="text-gray-400 block">Atributos Base:</span>
-                <span className="text-white">
-                  STR: {currentClassDetails.stats.strength} | INT: {currentClassDetails.stats.intelligence} | CON:{' '}
-                  {currentClassDetails.stats.constitution} | PER: {currentClassDetails.stats.perception}
-                </span>
+                <span className="text-gray-400 block">Provedor SSO:</span>
+                <span className="text-white uppercase font-bold">{ssoProvider}</span>
               </div>
               <div>
-                <span className="text-gray-400 block">Sincronização NATS:</span>
+                <span className="text-gray-400 block">Barramento NATS:</span>
                 <span className="text-o2-green font-bold">tech_guilds.hero.registered</span>
               </div>
             </div>
@@ -657,10 +884,14 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
               type="button"
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className="pixel-btn pixel-btn-primary px-5 py-2.5 text-xs flex items-center gap-2"
+              className="pixel-btn pixel-btn-primary px-6 py-3 text-xs flex items-center gap-2 shadow-2xl"
             >
               <Sparkles className="w-4 h-4" />
-              <span>{isSubmitting ? 'DISPARANDO NATS JETSTREAM...' : 'FORJAR HERÓI & ENTRAR NA BATALHA'}</span>
+              <span>
+                {isSubmitting
+                  ? 'PERSISTINDO NO POSTGRESQL & NATS...'
+                  : 'FORJAR HERÓI & ENTRAR NA BATALHA'}
+              </span>
             </button>
           </div>
         </div>
@@ -668,27 +899,34 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
 
       {/* PASSO 5: SUCESSO */}
       {currentStep === 5 && (
-        <div className="pixel-box pixel-box-green p-8 text-center space-y-6">
+        <div className="pixel-box pixel-box-green p-8 text-center space-y-6 bg-retro-card">
           <div className="text-6xl animate-bounce">🎉</div>
-          <h2 className="font-pixel text-base md:text-lg text-o2-green">HERÓI FORJADO COM SUCESSO!</h2>
+          <h2 className="font-pixel text-base md:text-lg text-o2-green">
+            HERÓI FORJADO COM SUCESSO!
+          </h2>
           <p className="text-sm text-gray-300 font-mono max-w-md mx-auto">
-            O herói <strong className="text-white">{heroName}</strong> foi registrado no schema{' '}
-            <code className="text-retro-cyan">registration</code> e sincronizado via NATS JetStream para Guilds e Gamification!
+            O herói <strong className="text-white">{heroName}</strong> foi registrado com sucesso no
+            PostgreSQL e sincronizado via NATS JetStream para todos os microsserviços!
           </p>
 
-          <div className="p-4 bg-[#0e141f] border border-retro-border rounded max-w-sm mx-auto text-xs font-mono text-left space-y-1">
+          <div className="p-4 bg-[#0e141f] border border-retro-border rounded max-w-sm mx-auto text-xs font-mono text-left space-y-1.5">
             <div>
               <span className="text-gray-400">ID do Herói:</span>{' '}
-              <span className="text-retro-cyan truncate">{registeredHeroId}</span>
+              <span className="text-retro-cyan truncate block">{registeredHeroId}</span>
             </div>
             <div>
               <span className="text-gray-400">Classe Atribuída:</span>{' '}
-              <span className="text-retro-gold">{selectedClass}</span>
+              <span className="text-retro-gold font-bold">{selectedClass}</span>
             </div>
-            <div>
-              <span className="text-gray-400">Status:</span>{' '}
+            {finalGuildId && (
+              <div>
+                <span className="text-gray-400">ID do Esquadrão:</span>{' '}
+                <span className="text-o2-green truncate block">{finalGuildId}</span>
+              </div>
+            )}
+            <div className="pt-1">
               <span className="text-o2-green font-bold flex items-center gap-1">
-                <CheckCircle className="w-3.5 h-3.5" /> PRONTO PARA BATALHA
+                <CheckCircle className="w-3.5 h-3.5" /> BANCO DE DADOS SINCRONIZADO
               </span>
             </div>
           </div>
@@ -696,10 +934,10 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
           <div className="pt-4">
             <button
               type="button"
-              onClick={() => onFinish(selectedGuildId || undefined)}
+              onClick={() => onFinish(finalGuildId || undefined)}
               className="pixel-btn pixel-btn-primary px-6 py-3 text-xs sm:text-sm inline-flex items-center gap-2 shadow-2xl"
             >
-              <span>🏰 ENTRAR NO SQUAD DASHBOARD</span>
+              <span>🏰 ENTRAR NO SQUAD DASHBOARD REAL</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>

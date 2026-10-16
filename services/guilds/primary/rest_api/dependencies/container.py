@@ -10,9 +10,16 @@ from services.guilds.domain.ports.secondary.guild_repository import GuildReposit
 from services.guilds.domain.use_cases.add_member import AddMemberUseCase
 from services.guilds.domain.use_cases.create_guild import CreateGuildUseCase
 from services.guilds.domain.use_cases.sync_hero_member import SyncHeroMemberUseCase
+import os
+from fastapi import Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from services.guilds.secondary.postgresql.database import get_db_session
 from services.guilds.secondary.postgresql.repositories.postgres_guild_repository import (
     InMemoryGuildMemberRepository,
     InMemoryGuildRepository,
+    PostgresGuildMemberRepository,
+    PostgresGuildRepository,
 )
 
 
@@ -72,25 +79,42 @@ class DependencyContainer:
         return self._sync_hero_member_port
 
 
-def get_container() -> DependencyContainer:
+def get_container(
+    session: Optional[AsyncSession] = Depends(get_db_session),
+) -> DependencyContainer:
+    if session is not None and os.getenv("TESTING", "false").lower() != "true":
+        return DependencyContainer(
+            guild_repository=PostgresGuildRepository(session),
+            member_repository=PostgresGuildMemberRepository(session),
+        )
     return DependencyContainer.get_instance()
 
 
-def get_create_guild_port() -> CreateGuildPort:
-    return get_container().create_guild_port
+def get_create_guild_port(
+    container: DependencyContainer = Depends(get_container),
+) -> CreateGuildPort:
+    return container.create_guild_port
 
 
-def get_add_member_port() -> AddMemberPort:
-    return get_container().add_member_port
+def get_add_member_port(
+    container: DependencyContainer = Depends(get_container),
+) -> AddMemberPort:
+    return container.add_member_port
 
 
-def get_sync_hero_member_port() -> SyncHeroMemberPort:
-    return get_container().sync_hero_member_port
+def get_sync_hero_member_port(
+    container: DependencyContainer = Depends(get_container),
+) -> SyncHeroMemberPort:
+    return container.sync_hero_member_port
 
 
-def get_guild_repository() -> GuildRepository:
-    return get_container().guild_repository
+def get_guild_repository(
+    container: DependencyContainer = Depends(get_container),
+) -> GuildRepository:
+    return container.guild_repository
 
 
-def get_guild_member_repository() -> GuildMemberRepository:
-    return get_container().member_repository
+def get_guild_member_repository(
+    container: DependencyContainer = Depends(get_container),
+) -> GuildMemberRepository:
+    return container.member_repository

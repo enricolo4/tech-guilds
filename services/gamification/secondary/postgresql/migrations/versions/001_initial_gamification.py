@@ -23,7 +23,7 @@ def upgrade() -> None:
     # 1. Tabela hero_progressions
     op.create_table(
         'hero_progressions',
-        sa.Column('hero_id', sa.CHAR(36), primary_key=True, nullable=False),
+        sa.Column('hero_id', PG_UUID(as_uuid=True), primary_key=True, nullable=False),
         sa.Column('name', sa.String(length=255), nullable=False),
         sa.Column('email', sa.String(length=255), nullable=True),
         sa.Column('hero_class', sa.String(length=50), nullable=False, server_default='NOVICE'),
@@ -38,7 +38,7 @@ def upgrade() -> None:
         sa.Column('equipped_gear', sa.JSON(), nullable=False, server_default='{}'),
         sa.Column('active_buffs', sa.JSON(), nullable=False, server_default='{}'),
         sa.Column('skill_cooldowns', sa.JSON(), nullable=False, server_default='{}'),
-        sa.Column('guild_id', sa.CHAR(36), nullable=True),
+        sa.Column('guild_id', PG_UUID(as_uuid=True), nullable=True),
         sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.func.now()),
         sa.Column('updated_at', sa.DateTime(), nullable=False, server_default=sa.func.now()),
         schema='gamification',
@@ -49,13 +49,13 @@ def upgrade() -> None:
     # 2. Tabela quests
     op.create_table(
         'quests',
-        sa.Column('id', sa.CHAR(36), primary_key=True, nullable=False),
+        sa.Column('id', PG_UUID(as_uuid=True), primary_key=True, nullable=False),
         sa.Column('external_id', sa.String(length=100), nullable=False),
         sa.Column('external_source', sa.String(length=50), nullable=False, server_default='linear'),
         sa.Column('title', sa.String(length=255), nullable=False),
-        sa.Column('guild_id', sa.CHAR(36), nullable=False),
-        sa.Column('assignee_hero_id', sa.CHAR(36), nullable=True),
-        sa.Column('adventure_id', sa.CHAR(36), nullable=True),
+        sa.Column('guild_id', PG_UUID(as_uuid=True), nullable=False),
+        sa.Column('assignee_hero_id', PG_UUID(as_uuid=True), nullable=True),
+        sa.Column('adventure_id', PG_UUID(as_uuid=True), nullable=True),
         sa.Column('quest_type', sa.String(length=50), nullable=False, server_default='FEATURE'),
         sa.Column('status', sa.String(length=50), nullable=False, server_default='TODO'),
         sa.Column('difficulty', sa.String(length=50), nullable=False, server_default='MEDIUM'),
@@ -71,10 +71,10 @@ def upgrade() -> None:
     # 3. Tabela mini_bosses
     op.create_table(
         'mini_bosses',
-        sa.Column('id', sa.CHAR(36), primary_key=True, nullable=False),
+        sa.Column('id', PG_UUID(as_uuid=True), primary_key=True, nullable=False),
         sa.Column('external_id', sa.String(length=100), nullable=False),
         sa.Column('title', sa.String(length=255), nullable=False),
-        sa.Column('guild_id', sa.CHAR(36), nullable=False),
+        sa.Column('guild_id', PG_UUID(as_uuid=True), nullable=False),
         sa.Column('severity', sa.String(length=50), nullable=False, server_default='MEDIUM'),
         sa.Column('max_health', sa.Integer(), nullable=False, server_default='100'),
         sa.Column('current_health', sa.Integer(), nullable=False, server_default='100'),

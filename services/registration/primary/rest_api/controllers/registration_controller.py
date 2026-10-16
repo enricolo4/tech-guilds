@@ -84,6 +84,12 @@ class RegisterHeroResponse(BaseModel):
     status_code=status.HTTP_201_CREATED,
     summary="Cadastra ou realiza onboarding de um herói",
 )
+@router.post(
+    "/heroes",
+    response_model=RegisterHeroResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Cadastra ou realiza onboarding de um herói (alias)",
+)
 async def register_hero(
     request: RegisterHeroRequest,
     port: RegisterHeroPort = Depends(get_register_hero_port),
@@ -108,6 +114,24 @@ async def register_hero(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
+
+
+@router.get(
+    "/heroes/by-email/{email}",
+    response_model=HeroResponse,
+    summary="Busca dados cadastrais de um herói por e-mail",
+)
+async def get_hero_by_email(
+    email: str,
+    repo: HeroRepository = Depends(get_hero_repository),
+):
+    hero = await repo.get_by_email(email)
+    if hero is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Herói com email '{email}' não encontrado",
+        )
+    return HeroResponse.from_domain(hero)
 
 
 @router.get(

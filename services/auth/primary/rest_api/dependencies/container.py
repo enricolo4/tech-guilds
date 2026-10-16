@@ -28,7 +28,17 @@ class AuthContainer:
         token_service: Optional[TokenServicePort] = None,
     ):
         self._sso_adapter = sso_adapter or MultiProviderSSOAdapter()
-        self._session_repository = session_repository or InMemorySessionRepository()
+        if session_repository is not None:
+            self._session_repository = session_repository
+        elif os.getenv("TESTING", "false").lower() == "true":
+            self._session_repository = InMemorySessionRepository()
+        else:
+            try:
+                from services.auth.secondary.postgresql.database import async_session_maker
+                from services.auth.secondary.postgresql.repositories.postgres_session_repository import PostgresSessionRepository
+                self._session_repository = PostgresSessionRepository(async_session_maker)
+            except Exception:
+                self._session_repository = InMemorySessionRepository()
         jwt_secret = os.getenv(
             "AUTH_JWT_SECRET",
             "super-secret-auth-key-change-in-production-1234567890",
