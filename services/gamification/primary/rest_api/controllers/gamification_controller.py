@@ -1,8 +1,9 @@
 from typing import Any, Dict, List
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 from pydantic import BaseModel, Field
 
+from services.common.tenant import resolve_tenant_id
 from services.gamification.domain.model.quest import (
     QuestStatus,
     QuestDifficulty,
@@ -43,6 +44,7 @@ class CardEventRequest(BaseModel):
     difficulty: QuestDifficulty = QuestDifficulty.MEDIUM
     is_pair_programming: bool = False
     adventure_id: UUID | None = None
+    tenant_id: str | None = None
 
 
 class BugEventRequest(BaseModel):
@@ -53,6 +55,7 @@ class BugEventRequest(BaseModel):
     is_resolved: bool = Field(False, description="True se o bug foi fechado/resolvido")
     resolver_email: str | None = None
     resolver_hero_id: UUID | None = None
+    tenant_id: str | None = None
 
 
 class CastSkillRequest(BaseModel):
@@ -87,11 +90,11 @@ class UnequipItemRequest(BaseModel):
 
 # --- Endpoints ---
 
-@router.post("/webhooks/card-event", summary="Processa webhook de tarefas (Linear/GitHub)")
-async def handle_card_event(
+async def _execute_card_event(
     req: CardEventRequest,
-    container: GamificationContainer = Depends(get_gamification_container),
-):
+    resolved_tenant: str,
+    container: GamificationContainer,
+) -> Dict[str, Any]:
     cmd = ProcessCardEventCommand(
         external_id=req.external_id,
         external_source=req.external_source,
@@ -103,12 +106,14 @@ async def handle_card_event(
         difficulty=req.difficulty,
         is_pair_programming=req.is_pair_programming,
         adventure_id=req.adventure_id,
+        tenant_id=resolved_tenant,
     )
     result = await container.process_card_event.execute(cmd)
     return {
         "quest_id": str(result.quest.id),
         "external_id": result.quest.external_id,
         "status": result.quest.status.value,
+        "tenant_id": result.quest.tenant_id,
         "reward": (
             {
                 "hero_xp": result.reward.hero_xp,
@@ -126,6 +131,7 @@ async def handle_card_event(
                 "level": result.hero_progression.level,
                 "exp": result.hero_progression.exp,
                 "gold": result.hero_progression.gold,
+                "tenant_id": result.hero_progression.tenant_id,
             }
             if result.hero_progression
             else None
@@ -133,11 +139,35 @@ async def handle_card_event(
     }
 
 
-@router.post("/webhooks/bug-event", summary="Processa evento de Bug / Incidente (Mini-Boss)")
-async def handle_bug_event(
-    req: BugEventRequest,
+@router.post("/webhooks/card-event", summary="Processa webhook de tarefas (Linear/GitHub/Jira)")
+async def handle_card_event(
+    req: CardEventRequest,
+    x_tenant_id: str | None = Header(default=None, alias="X-Tenant-ID"),
     container: GamificationContainer = Depends(get_gamification_container),
 ):
+    explicit = req.tenant_id or x_tenant_id
+    resolved_tenant = resolve_tenant_id(explicit_tenant_id=explicit) if explicit else "default"
+    return await _execute_card_event(req, resolved_tenant, container)
+
+
+@router.post(
+    "/webhooks/{tenant_id}/card-event",
+    summary="Processa webhook de tarefas (Linear/GitHub/Jira) isolado por Tenant",
+)
+async def handle_tenant_card_event(
+    tenant_id: str,
+    req: CardEventRequest,
+    container: GamificationContainer = Depends(get_gamification_container),
+):
+    resolved_tenant = resolve_tenant_id(explicit_tenant_id=tenant_id)
+    return await _execute_card_event(req, resolved_tenant, container)
+
+
+async def _execute_bug_event(
+    req: BugEventRequest,
+    resolved_tenant: str,
+    container: GamificationContainer,
+) -> Dict[str, Any]:
     cmd = ProcessBugEventCommand(
         external_id=req.external_id,
         title=req.title,
@@ -146,11 +176,13 @@ async def handle_bug_event(
         is_resolved=req.is_resolved,
         resolver_email=req.resolver_email,
         resolver_hero_id=req.resolver_hero_id,
+        tenant_id=resolved_tenant,
     )
     result = await container.process_bug_event.execute(cmd)
     return {
         "mini_boss_id": str(result.mini_boss.id),
         "external_id": result.mini_boss.external_id,
+        "tenant_id": result.mini_boss.tenant_id,
         "is_defeated": result.is_defeated,
         "current_health": result.mini_boss.current_health,
         "max_health": result.mini_boss.max_health,
@@ -158,6 +190,30 @@ async def handle_bug_event(
         "bounty_gold": result.bounty_gold,
         "hero_leveled_up": result.hero_leveled_up,
     }
+
+
+@router.post("/webhooks/bug-event", summary="Processa evento de Bug / Incidente (Mini-Boss)")
+async def handle_bug_event(
+    req: BugEventRequest,
+    x_tenant_id: str | None = Header(default=None, alias="X-Tenant-ID"),
+    container: GamificationContainer = Depends(get_gamification_container),
+):
+    explicit = req.tenant_id or x_tenant_id
+    resolved_tenant = resolve_tenant_id(explicit_tenant_id=explicit) if explicit else "default"
+    return await _execute_bug_event(req, resolved_tenant, container)
+
+
+@router.post(
+    "/webhooks/{tenant_id}/bug-event",
+    summary="Processa evento de Bug / Incidente (Mini-Boss) isolado por Tenant",
+)
+async def handle_tenant_bug_event(
+    tenant_id: str,
+    req: BugEventRequest,
+    container: GamificationContainer = Depends(get_gamification_container),
+):
+    resolved_tenant = resolve_tenant_id(explicit_tenant_id=tenant_id)
+    return await _execute_bug_event(req, resolved_tenant, container)
 
 
 @router.post("/skills/cast", summary="Conjura habilidade especial consumindo mana")
@@ -237,9 +293,12 @@ async def unequip_item_endpoint(
 @router.get("/heroes/{hero_id}/progression", summary="Obtém a ficha de RPG do herói")
 async def get_hero_progression(
     hero_id: UUID,
+    tenant_id: str | None = None,
+    x_tenant_id: str | None = Header(default=None, alias="X-Tenant-ID"),
     container: GamificationContainer = Depends(get_gamification_container),
 ):
-    hero = await container.hero_repo.get_by_id(hero_id)
+    filter_tenant = tenant_id or x_tenant_id
+    hero = await container.hero_repo.get_by_id(hero_id, tenant_id=filter_tenant)
     if not hero:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Hero not found")
     return {
@@ -259,18 +318,22 @@ async def get_hero_progression(
         "equipped_gear": hero.equipped_gear,
         "active_buffs": hero.active_buffs,
         "skill_cooldowns": hero.skill_cooldowns,
+        "tenant_id": hero.tenant_id,
     }
 
 
 @router.get("/quests", summary="Lista todas as quests da guilda")
 async def list_quests(
     guild_id: UUID | None = None,
+    tenant_id: str | None = None,
+    x_tenant_id: str | None = Header(default=None, alias="X-Tenant-ID"),
     container: GamificationContainer = Depends(get_gamification_container),
 ):
+    filter_tenant = tenant_id or x_tenant_id
     if guild_id:
-        quests = await container.quest_repo.list_by_guild(guild_id)
+        quests = await container.quest_repo.list_by_guild(guild_id, tenant_id=filter_tenant)
     else:
-        quests = await container.quest_repo.list_all()
+        quests = await container.quest_repo.list_all(tenant_id=filter_tenant)
     return [
         {
             "id": str(q.id),
@@ -281,6 +344,7 @@ async def list_quests(
             "difficulty": q.difficulty.value,
             "is_pair_programming": q.is_pair_programming,
             "assignee_hero_id": str(q.assignee_hero_id) if q.assignee_hero_id else None,
+            "tenant_id": q.tenant_id,
         }
         for q in quests
     ]
@@ -289,12 +353,15 @@ async def list_quests(
 @router.get("/combat/mini-bosses", summary="Lista mini-bosses ativos")
 async def list_mini_bosses(
     guild_id: UUID | None = None,
+    tenant_id: str | None = None,
+    x_tenant_id: str | None = Header(default=None, alias="X-Tenant-ID"),
     container: GamificationContainer = Depends(get_gamification_container),
 ):
+    filter_tenant = tenant_id or x_tenant_id
     if guild_id:
-        bosses = await container.boss_repo.list_active_by_guild(guild_id)
+        bosses = await container.boss_repo.list_active_by_guild(guild_id, tenant_id=filter_tenant)
     else:
-        bosses = await container.boss_repo.list_all()
+        bosses = await container.boss_repo.list_all(tenant_id=filter_tenant)
     return [
         {
             "id": str(b.id),
@@ -306,6 +373,7 @@ async def list_mini_bosses(
             "is_defeated": b.is_defeated,
             "bounty_hero_xp": b.bounty_hero_xp,
             "bounty_gold": b.bounty_gold,
+            "tenant_id": b.tenant_id,
         }
         for b in bosses
     ]

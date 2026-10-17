@@ -38,6 +38,7 @@ class HeroProgression:
     hero_id: UUID
     name: str
     email: str | None = None
+    tenant_id: str = "default"
     hero_class: str = "NOVICE"
     level: int = 1
     exp: int = 0
@@ -59,6 +60,8 @@ class HeroProgression:
             self.guild_id = UUID(self.guild_id)
         if isinstance(self.stats, dict):
             self.stats = HeroProgressionStats.from_dict(self.stats)
+        if not self.tenant_id:
+            self.tenant_id = "default"
 
     @property
     def experience_to_next_level(self) -> int:

@@ -36,6 +36,7 @@ class QuestReward:
 class Quest:
     """Representa um card de tarefa originado do Linear, Jira ou GitHub Issues."""
     id: UUID = field(default_factory=uuid4)
+    tenant_id: str = "default"
     external_id: str = ""           # ex: "LIN-1024" ou "JIRA-402"
     external_source: str = "linear"  # "linear", "jira", "github"
     title: str = ""

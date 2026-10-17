@@ -19,6 +19,7 @@ class SyncHeroProgressionUseCase(SyncHeroProgressionPort):
         self.hero_progression_repo = hero_progression_repo
 
     async def execute(self, cmd: SyncHeroProgressionCommand) -> SyncHeroProgressionResult:
+        tenant_id = (cmd.tenant_id or "default").strip() or "default"
         existing = await self.hero_progression_repo.get_by_id(cmd.hero_id)
         if existing:
             # Atualiza informações de cadastro sem resetar progresso de jogo
@@ -29,6 +30,7 @@ class SyncHeroProgressionUseCase(SyncHeroProgressionPort):
                 existing.hero_class = cmd.hero_class
             if cmd.guild_id:
                 existing.guild_id = cmd.guild_id
+            existing.tenant_id = tenant_id
             saved = await self.hero_progression_repo.save(existing)
             return SyncHeroProgressionResult(hero_progression=saved, created=False)
 
@@ -43,6 +45,7 @@ class SyncHeroProgressionUseCase(SyncHeroProgressionPort):
             gold=cmd.gold,
             guild_id=cmd.guild_id,
             stats=HeroProgressionStats(),
+            tenant_id=tenant_id,
         )
         saved = await self.hero_progression_repo.save(new_hero)
         return SyncHeroProgressionResult(hero_progression=saved, created=True)

@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import DateTime, Integer, String, Uuid, func
+from sqlalchemy import DateTime, Integer, String, UniqueConstraint, Uuid, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 from services.registration.domain.model.hero import Hero, HeroClass, HeroStats
@@ -14,10 +14,14 @@ class Base(DeclarativeBase):
 class HeroModel(Base):
     """Modelo relacional do Herói armazenado no PostgreSQL no schema 'registration'."""
     __tablename__ = "heroes"
-    __table_args__ = {"schema": "registration"}
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "email", name="uq_registration_heroes_tenant_email"),
+        {"schema": "registration"},
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
+    tenant_id: Mapped[str] = mapped_column(String(128), nullable=False, default="default", server_default="default", index=True)
+    email: Mapped[str] = mapped_column(String(255), index=True, nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     avatar_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
     hero_class: Mapped[str] = mapped_column(String(50), nullable=False, default="NOVICE")
@@ -51,6 +55,7 @@ class HeroModel(Base):
             id=self.id if isinstance(self.id, uuid.UUID) else uuid.UUID(str(self.id)),
             email=self.email,
             name=self.name,
+            tenant_id=self.tenant_id or "default",
             avatar_url=self.avatar_url,
             guild_id=self.guild_id if (self.guild_id is None or isinstance(self.guild_id, uuid.UUID)) else uuid.UUID(str(self.guild_id)),
             hero_class=h_class,
@@ -75,6 +80,7 @@ class HeroModel(Base):
         class_str = hero.hero_class.value if hasattr(hero.hero_class, "value") else str(hero.hero_class)
         return cls(
             id=hero.id,
+            tenant_id=hero.tenant_id or "default",
             email=hero.email,
             name=hero.name,
             avatar_url=hero.avatar_url,
@@ -92,3 +98,4 @@ class HeroModel(Base):
             perception=hero.stats.perception,
             guild_id=hero.guild_id,
         )
+

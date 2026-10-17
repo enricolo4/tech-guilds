@@ -36,6 +36,7 @@ class HeroRegisteredConsumer:
             level=event.level,
             experience=event.experience,
             gold=event.gold,
+            tenant_id=getattr(event, "tenant_id", "default") or "default",
         )
         result = await self.sync_hero_progression_port.execute(cmd)
         logger.info(

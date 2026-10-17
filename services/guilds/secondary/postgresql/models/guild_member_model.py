@@ -13,6 +13,7 @@ class GuildMemberModel(Base):
     __table_args__ = {"schema": "guilds"}
 
     hero_id = Column(GUID, primary_key=True)
+    tenant_id = Column(String(128), nullable=False, default="default", server_default="default", index=True)
     name = Column(String(120), nullable=False)
     email = Column(String(255), nullable=False)
     hero_class = Column(String(50), nullable=False)

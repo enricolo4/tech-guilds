@@ -27,7 +27,8 @@ class SessionRepository(ABC):
         pass
 
     @abstractmethod
-    async def find_by_email(self, email: str) -> Session | None:
+    async def find_by_email(self, email: str, tenant_id: str | None = None) -> Session | None:
         """Recupera a sessão mais recente associada a um e-mail corporativo."""
         pass
+
 

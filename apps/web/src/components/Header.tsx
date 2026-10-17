@@ -80,6 +80,14 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="text-white font-medium truncate max-w-[140px]">
                 {authSession.user.name}
               </span>
+              {(authSession.user.organization_name || authSession.tenant_id) && (
+                <span
+                  className="text-[9px] px-1.5 py-0.5 rounded-full bg-o2-green/10 border border-o2-green/30 text-o2-green font-mono"
+                  title={`Tenant ID: ${authSession.tenant_id || authSession.user.tenant_id || 'default'}`}
+                >
+                  🏢 {authSession.user.organization_name || authSession.tenant_id}
+                </span>
+              )}
               <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-retro-border text-retro-cyan uppercase font-mono">
                 {authSession.user.provider}
               </span>

@@ -110,9 +110,10 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
   const [showTokenInput, setShowTokenInput] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-  // Herói
+  // Herói & Organização (Multi-Tenant)
   const [heroName, setHeroName] = useState('');
   const [heroEmail, setHeroEmail] = useState('');
+  const [organizationName, setOrganizationName] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string>(
     'https://api.dicebear.com/7.x/adventurer/svg?seed=Arthur'
   );
@@ -139,7 +140,7 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
   const currentClassDetails =
     AVAILABLE_CLASSES.find((c) => c.id === selectedClass) || AVAILABLE_CLASSES[0];
 
-  // Carrega guildas ativas do PostgreSQL
+  // Carrega guildas ativas do PostgreSQL (filtradas pelo Tenant ativo)
   const fetchGuilds = () => {
     api
       .listGuilds()
@@ -165,6 +166,9 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
         setAuthSession(parsed);
         setHeroName(parsed.user.name);
         setHeroEmail(parsed.user.email);
+        if (parsed.user.organization_name) {
+          setOrganizationName(parsed.user.organization_name);
+        }
         setSsoProvider((parsed.user.provider as any) || 'direct');
         if (parsed.user.avatar_url) {
           setAvatarUrl(parsed.user.avatar_url);
@@ -212,6 +216,7 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
     setAuthSession(null);
     setHeroName('');
     setHeroEmail('');
+    setOrganizationName('');
     setPassword('');
     setExistingHeroId(null);
     setErrorMessage('');
@@ -236,11 +241,13 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
         email: heroEmail.trim().toLowerCase(),
         password: password.trim() || undefined,
         avatar_url: avatarUrl,
+        organization_name: organizationName.trim() || undefined,
       });
 
       setAuthSession(session);
       setSsoProvider('direct');
       localStorage.setItem('tech_guilds_auth', JSON.stringify(session));
+      fetchGuilds();
 
       // Verifica se o herói já foi cadastrado
       const existing = await api.getHeroByEmail(session.user.email).catch(() => null);
@@ -392,6 +399,9 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
       // 1. Cadastra o herói no microsserviço de Registration
       const token = authSession ? authSession.access_token : undefined;
       const provider = authSession?.user?.provider || ssoProvider;
+      const activeTenantId = authSession?.tenant_id || authSession?.user?.tenant_id || undefined;
+      const activeOrgName =
+        organizationName.trim() || authSession?.user?.organization_name || undefined;
       const regRes = await api.registerHero({
         name: heroName.trim(),
         email: heroEmail.trim().toLowerCase(),
@@ -399,6 +409,8 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
         avatar_url: avatarUrl,
         sso_token: token,
         sso_provider: provider,
+        tenant_id: activeTenantId,
+        organization_name: activeOrgName,
       });
 
       const hero = regRes.hero || regRes;
@@ -413,6 +425,7 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
           name: newGuildName.trim(),
           description: newGuildDescription.trim() || 'Squad de Desenvolvimento Ágil',
           creator_hero_id: heroId,
+          tenant_id: hero.tenant_id || activeTenantId,
         });
         targetGuildId = createdGuild.id;
 
@@ -534,9 +547,15 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
                       <span>Escolher Visual</span>
                     </button>
                   </div>
-                  <div className="flex items-center gap-2 mt-2 justify-center sm:justify-start">
+                  <div className="flex flex-wrap items-center gap-2 mt-2 justify-center sm:justify-start">
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-black/40 border border-retro-border text-gray-300">
                       Provedor: <strong className="text-o2-green uppercase">{authSession.user.provider}</strong>
+                    </span>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-black/40 border border-o2-green/40 text-gray-300">
+                      Tenant / Empresa:{' '}
+                      <strong className="text-o2-green">
+                        {authSession.user.organization_name || authSession.tenant_id || authSession.user.tenant_id || 'default'}
+                      </strong>
                     </span>
                     <span
                       className="text-[10px] font-mono px-2 py-0.5 rounded bg-black/40 border border-retro-border text-gray-300"
@@ -716,6 +735,19 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
 
                       <div>
                         <label className="block text-xs font-pixel text-gray-300 mb-1">
+                          ORGANIZAÇÃO / EMPRESA (MULTI-TENANT)
+                        </label>
+                        <input
+                          type="text"
+                          value={organizationName}
+                          onChange={(e) => setOrganizationName(e.target.value)}
+                          placeholder="Ex: O2 Inc (ou detectado automaticamente pelo domínio do e-mail)"
+                          className="w-full bg-[#0b0e14] border-2 border-retro-border focus:border-o2-green px-3 py-2 text-white font-mono text-base outline-none rounded"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-pixel text-gray-300 mb-1">
                           SENHA DE ACESSO (OPCIONAL)
                         </label>
                         <div className="relative">
@@ -737,7 +769,7 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onFinish }) => {
                       </div>
 
                       <div className="pt-2 text-[11px] text-gray-400 font-mono">
-                        🛡️ Sua conta e credenciais são autenticadas com criptografia e segurança de ponta a ponta.
+                        🛡️ Seus dados, guildas e integrações Linear/Jira ficam isolados no Tenant da sua empresa.
                       </div>
                     </div>
                   </div>

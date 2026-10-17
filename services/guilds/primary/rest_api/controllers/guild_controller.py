@@ -1,7 +1,7 @@
 from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 from pydantic import BaseModel, Field
 
 from services.guilds.domain.ports.primary.guild_ports import (
@@ -27,6 +27,7 @@ class CreateGuildRequest(BaseModel):
     name: str = Field(..., min_length=1, max_length=120, description="Nome da guilda / squad")
     description: str = Field(default="", description="Descrição do squad ou time")
     creator_hero_id: UUID | None = Field(default=None, description="ID do herói criador/líder")
+    tenant_id: str | None = Field(default=None, description="Identificador do Tenant (Organização)")
 
 
 class AddMemberRequest(BaseModel):
@@ -38,6 +39,7 @@ class GuildMemberResponse(BaseModel):
     name: str
     email: str
     hero_class: str
+    tenant_id: str = "default"
     guild_id: UUID | None
     level: int
     avatar_url: str | None
@@ -47,6 +49,7 @@ class GuildResponse(BaseModel):
     id: UUID
     name: str
     description: str
+    tenant_id: str = "default"
     level: int
     experience: int
     treasury_gold: int
@@ -57,14 +60,17 @@ class GuildResponse(BaseModel):
 @router.post("/", response_model=GuildResponse, status_code=status.HTTP_201_CREATED)
 async def create_guild(
     req: CreateGuildRequest,
+    x_tenant_id: str | None = Header(None, alias="X-Tenant-ID"),
     port: CreateGuildPort = Depends(get_create_guild_port),
 ):
     """Cria uma nova guilda através da porta primária CreateGuildPort."""
     try:
+        effective_tenant = (req.tenant_id or x_tenant_id or "default").strip() or "default"
         cmd = CreateGuildCommand(
             name=req.name,
             description=req.description,
             creator_hero_id=req.creator_hero_id,
+            tenant_id=effective_tenant,
         )
         result = await port.execute(cmd)
         g = result.guild
@@ -72,6 +78,7 @@ async def create_guild(
             id=g.id,
             name=g.name,
             description=g.description,
+            tenant_id=g.tenant_id,
             level=g.level,
             experience=g.experience,
             treasury_gold=g.treasury_gold,
@@ -89,15 +96,19 @@ async def create_guild(
 async def list_guilds(
     limit: int = 100,
     offset: int = 0,
+    tenant_id: str | None = None,
+    x_tenant_id: str | None = Header(None, alias="X-Tenant-ID"),
     repo: GuildRepository = Depends(get_guild_repository),
 ):
-    """Lista todas as guildas cadastradas."""
-    guilds = await repo.list_all(limit=limit, offset=offset)
+    """Lista todas as guildas cadastradas (isoladas por tenant quando informado)."""
+    effective_tenant = tenant_id or x_tenant_id
+    guilds = await repo.list_all(limit=limit, offset=offset, tenant_id=effective_tenant)
     return [
         GuildResponse(
             id=g.id,
             name=g.name,
             description=g.description,
+            tenant_id=g.tenant_id,
             level=g.level,
             experience=g.experience,
             treasury_gold=g.treasury_gold,
@@ -110,10 +121,13 @@ async def list_guilds(
 @router.get("/{guild_id}", response_model=GuildResponse)
 async def get_guild(
     guild_id: UUID,
+    tenant_id: str | None = None,
+    x_tenant_id: str | None = Header(None, alias="X-Tenant-ID"),
     repo: GuildRepository = Depends(get_guild_repository),
 ):
     """Recupera detalhes de uma guilda pelo identificador."""
-    guild = await repo.find_by_id(guild_id)
+    effective_tenant = tenant_id or x_tenant_id
+    guild = await repo.find_by_id(guild_id, tenant_id=effective_tenant)
     if not guild:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -123,6 +137,7 @@ async def get_guild(
         id=guild.id,
         name=guild.name,
         description=guild.description,
+        tenant_id=guild.tenant_id,
         level=guild.level,
         experience=guild.experience,
         treasury_gold=guild.treasury_gold,
@@ -173,6 +188,7 @@ async def list_guild_members(
             name=m.name,
             email=m.email,
             hero_class=m.hero_class,
+            tenant_id=m.tenant_id,
             guild_id=m.guild_id,
             level=m.level,
             avatar_url=m.avatar_url,
@@ -198,7 +214,9 @@ async def get_hero_guild_membership(
         name=member.name,
         email=member.email,
         hero_class=member.hero_class,
+        tenant_id=member.tenant_id,
         guild_id=member.guild_id,
         level=member.level,
         avatar_url=member.avatar_url,
     )
+

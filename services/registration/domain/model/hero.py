@@ -46,6 +46,7 @@ class Hero:
     id: UUID = field(default_factory=uuid4)
     email: str = ""
     name: str = ""
+    tenant_id: str = "default"
     avatar_url: str | None = None
     guild_id: UUID | None = None
     hero_class: HeroClass = HeroClass.NOVICE

@@ -30,6 +30,7 @@ class HeroProgressionModel(Base):
     active_buffs = Column(JSON, default=dict, nullable=False)
     skill_cooldowns = Column(JSON, default=dict, nullable=False)
     guild_id = Column(GUID, nullable=True, index=True)
+    tenant_id = Column(String(120), default="default", nullable=False, index=True)
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at = Column(

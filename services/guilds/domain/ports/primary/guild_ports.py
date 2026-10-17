@@ -12,6 +12,7 @@ class CreateGuildCommand:
     name: str
     description: str = ""
     creator_hero_id: UUID | None = None
+    tenant_id: str = "default"
 
 
 @dataclass
@@ -61,6 +62,7 @@ class SyncHeroMemberCommand:
     name: str
     email: str
     hero_class: str
+    tenant_id: str = "default"
     avatar_url: str | None = None
     level: int = 1
     occurred_at: str | None = None

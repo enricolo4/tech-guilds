@@ -1,4 +1,5 @@
 import httpx
+from services.common.tenant import resolve_tenant_id, resolve_organization_name
 from services.auth.domain.model.user_claims import UserClaims
 from services.auth.domain.ports.secondary.sso_port import SSOIdentityPort
 
@@ -29,12 +30,15 @@ class MultiProviderSSOAdapter(SSOIdentityPort):
                 username = parts[0] if parts else "developer"
             name_part = username.capitalize()
             email = f"{username.lower()}@{provider_normalized}-corp.io"
+            tenant_id = resolve_tenant_id(email=email)
             return UserClaims(
                 email=email,
                 name=f"{name_part} ({provider_normalized.title()})",
                 avatar_url=f"https://api.dicebear.com/7.x/adventurer/svg?seed={name_part}",
                 provider=provider_normalized,
                 provider_user_id=f"dev_{provider_normalized}_{clean_token}",
+                tenant_id=tenant_id,
+                organization_name=resolve_organization_name(tenant_id),
             )
 
         if provider_normalized == "google":
@@ -57,12 +61,17 @@ class MultiProviderSSOAdapter(SSOIdentityPort):
                 raise ValueError("Token do Google inválido ou expirado")
 
             data = resp.json()
+            email = data.get("email", "")
+            hd = data.get("hd")  # Google Workspace Hosted Domain
+            tenant_id = resolve_tenant_id(email=email, explicit_tenant_id=hd)
             return UserClaims(
-                email=data.get("email", ""),
+                email=email,
                 name=data.get("name", ""),
                 avatar_url=data.get("picture"),
                 provider="google",
                 provider_user_id=data.get("sub", ""),
+                tenant_id=tenant_id,
+                organization_name=resolve_organization_name(tenant_id),
             )
         finally:
             if should_close:
@@ -91,12 +100,17 @@ class MultiProviderSSOAdapter(SSOIdentityPort):
                     if primary:
                         email = primary.get("email")
 
+            final_email = email or f"{user_data.get('login')}@github.local"
+            company = user_data.get("company")
+            tenant_id = resolve_tenant_id(email=final_email, organization_name=company)
             return UserClaims(
-                email=email or f"{user_data.get('login')}@github.local",
+                email=final_email,
                 name=user_data.get("name") or user_data.get("login", ""),
                 avatar_url=user_data.get("avatar_url"),
                 provider="github",
                 provider_user_id=str(user_data.get("id")),
+                tenant_id=tenant_id,
+                organization_name=resolve_organization_name(tenant_id, explicit_name=company),
             )
         finally:
             if should_close:
@@ -113,13 +127,18 @@ class MultiProviderSSOAdapter(SSOIdentityPort):
                 raise ValueError("Token da Microsoft/Azure inválido ou expirado")
 
             data = resp.json()
+            email = data.get("mail") or data.get("userPrincipalName", "")
+            tenant_id = resolve_tenant_id(email=email)
             return UserClaims(
-                email=data.get("mail") or data.get("userPrincipalName", ""),
+                email=email,
                 name=data.get("displayName", ""),
                 avatar_url=None,
                 provider="azure",
                 provider_user_id=data.get("id", ""),
+                tenant_id=tenant_id,
+                organization_name=resolve_organization_name(tenant_id),
             )
         finally:
             if should_close:
                 await client.aclose()
+

@@ -355,8 +355,8 @@ class TestGuildsRestApi:
 class TestPostgresRepositoriesAndSchema:
     def test_schema_configuration(self):
         """Verifica se os modelos SQLAlchemy pertencem estritamente ao schema 'guilds'."""
-        assert GuildModel.__table_args__ == {"schema": "guilds"}
-        assert GuildMemberModel.__table_args__ == {"schema": "guilds"}
+        assert GuildModel.__table__.schema == "guilds"
+        assert GuildMemberModel.__table__.schema == "guilds"
         assert GuildModel.__tablename__ == "guilds"
         assert GuildMemberModel.__tablename__ == "members"
 

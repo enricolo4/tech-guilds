@@ -23,6 +23,7 @@ class ProcessCardEventCommand:
     difficulty: QuestDifficulty = QuestDifficulty.MEDIUM
     is_pair_programming: bool = False
     adventure_id: UUID | None = None
+    tenant_id: str = "default"
 
 
 @dataclass

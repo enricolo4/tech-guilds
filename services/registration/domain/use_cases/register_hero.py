@@ -1,5 +1,6 @@
 from uuid import uuid4
 from services.common.events import HeroRegisteredEvent
+from services.common.tenant import resolve_tenant_id
 from services.registration.domain.model.hero import Hero, HeroClass, HeroStats
 from services.registration.domain.ports.primary.register_hero_port import (
     RegisterHeroCommand,
@@ -28,12 +29,14 @@ class RegisterHeroUseCase(RegisterHeroPort):
 
     async def register(self, command: RegisterHeroCommand) -> RegisterHeroResult:
         # 1. Resolução de identidade (SSO ou cadastro direto)
+        claims_tenant_id = None
         if command.sso_token and command.sso_provider:
             try:
                 claims = await self._sso_port.verify_token(command.sso_token, command.sso_provider)
                 email = claims.email or command.email
                 name = command.name or claims.name
                 avatar_url = command.avatar_url or claims.avatar_url
+                claims_tenant_id = getattr(claims, "tenant_id", None)
             except Exception as e:
                 if command.email and "@" in command.email:
                     email = command.email
@@ -54,8 +57,13 @@ class RegisterHeroUseCase(RegisterHeroPort):
         email = email.strip().lower()
         name = name.strip()
 
-        # 2. Idempotência / Verificação de existência prévia
-        existing_hero = await self._hero_repository.get_by_email(email)
+        tenant_id = resolve_tenant_id(
+            email=email,
+            explicit_tenant_id=command.tenant_id or (claims_tenant_id if claims_tenant_id != "default" else None),
+        )
+
+        # 2. Idempotência / Verificação de existência prévia dentro do Tenant
+        existing_hero = await self._hero_repository.get_by_email(email, tenant_id=tenant_id)
         if existing_hero is not None:
             return RegisterHeroResult(
                 hero=existing_hero,
@@ -77,6 +85,7 @@ class RegisterHeroUseCase(RegisterHeroPort):
             id=uuid4(),
             email=email,
             name=name,
+            tenant_id=tenant_id,
             avatar_url=avatar_url,
             hero_class=HeroClass.NOVICE,
             stats=HeroStats(),
@@ -87,12 +96,13 @@ class RegisterHeroUseCase(RegisterHeroPort):
         # 5. Persistência via porta secundária
         saved_hero = await self._hero_repository.save(new_hero)
 
-        # 6. Disparo do evento de domínio no NATS JetStream
+        # 6. Disparo do evento de domínio no NATS JetStream com isolamento por tenant
         event = HeroRegisteredEvent(
             hero_id=saved_hero.id,
             email=saved_hero.email,
             name=saved_hero.name,
             hero_class=saved_hero.hero_class.value if hasattr(saved_hero.hero_class, "value") else str(saved_hero.hero_class),
+            tenant_id=saved_hero.tenant_id,
             avatar_url=saved_hero.avatar_url,
             level=saved_hero.level,
             experience=saved_hero.experience,
@@ -105,3 +115,4 @@ class RegisterHeroUseCase(RegisterHeroPort):
             is_new_registration=True,
             message="Herói cadastrado com sucesso.",
         )
+

@@ -14,6 +14,7 @@ class BossSeverity(str, Enum):
 class MiniBoss:
     """Representa um Bug em aberto ou Incidente que ataca a Guilda até ser corrigido."""
     id: UUID = field(default_factory=uuid4)
+    tenant_id: str = "default"
     external_id: str = ""       # ex: "BUG-304"
     title: str = ""
     guild_id: UUID = field(default_factory=uuid4)
@@ -26,7 +27,14 @@ class MiniBoss:
     bounty_gold: int = 30
 
     @classmethod
-    def spawn_from_bug(cls, external_id: str, title: str, guild_id: UUID, severity: BossSeverity) -> "MiniBoss":
+    def spawn_from_bug(
+        cls,
+        external_id: str,
+        title: str,
+        guild_id: UUID,
+        severity: BossSeverity,
+        tenant_id: str = "default",
+    ) -> "MiniBoss":
         health_map = {
             BossSeverity.LOW: 50,
             BossSeverity.MEDIUM: 100,
@@ -35,6 +43,7 @@ class MiniBoss:
         }
         hp = health_map.get(severity, 100)
         return cls(
+            tenant_id=tenant_id or "default",
             external_id=external_id,
             title=title,
             guild_id=guild_id,

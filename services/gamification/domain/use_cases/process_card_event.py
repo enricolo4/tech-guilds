@@ -27,7 +27,8 @@ class ProcessCardEventUseCase(ProcessCardEventPort):
         self.hero_progression_repo = hero_progression_repo
 
     async def execute(self, cmd: ProcessCardEventCommand) -> ProcessCardEventResult:
-        quest = await self.quest_repo.get_by_external_id(cmd.external_id)
+        tenant_id = (cmd.tenant_id or "default").strip() or "default"
+        quest = await self.quest_repo.get_by_external_id(cmd.external_id, tenant_id=tenant_id)
         if quest is None:
             quest = Quest(
                 external_id=cmd.external_id,
@@ -37,24 +38,29 @@ class ProcessCardEventUseCase(ProcessCardEventPort):
                 difficulty=cmd.difficulty,
                 is_pair_programming=cmd.is_pair_programming,
                 adventure_id=cmd.adventure_id,
+                tenant_id=tenant_id,
             )
 
         previous_status = quest.status
         quest.status = cmd.new_status
         quest.title = cmd.title
         quest.is_pair_programming = cmd.is_pair_programming
+        quest.tenant_id = tenant_id
         if cmd.adventure_id:
             quest.adventure_id = cmd.adventure_id
 
-        # Localiza o herói associado por ID ou e-mail
+        # Localiza o herói associado por ID ou e-mail dentro do tenant
+        filter_tenant = tenant_id if tenant_id != "default" else None
         hero = None
         if cmd.assignee_hero_id:
-            hero = await self.hero_progression_repo.get_by_id(cmd.assignee_hero_id)
+            hero = await self.hero_progression_repo.get_by_id(cmd.assignee_hero_id, tenant_id=filter_tenant)
         elif cmd.assignee_email:
-            hero = await self.hero_progression_repo.get_by_email(cmd.assignee_email)
+            hero = await self.hero_progression_repo.get_by_email(cmd.assignee_email, tenant_id=filter_tenant)
 
         if hero:
             quest.assignee_hero_id = hero.hero_id
+            if tenant_id == "default" and hero.tenant_id:
+                quest.tenant_id = hero.tenant_id
             if hero.guild_id is None:
                 hero.guild_id = cmd.guild_id
 

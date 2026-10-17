@@ -29,6 +29,7 @@ class GuildMemberRepository(ABC):
         pass
 
     @abstractmethod
-    async def list_all(self, limit: int = 100, offset: int = 0) -> List[GuildMember]:
-        """Lista todos os membros com paginação."""
+    async def list_all(self, limit: int = 100, offset: int = 0, tenant_id: str | None = None) -> List[GuildMember]:
+        """Lista todos os membros com paginação e filtro de tenant."""
         pass
+

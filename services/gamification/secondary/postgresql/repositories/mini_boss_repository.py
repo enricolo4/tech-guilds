@@ -19,23 +19,35 @@ class InMemoryMiniBossRepository(MiniBossRepository):
     def __init__(self):
         self._storage: dict[UUID, MiniBoss] = {}
 
-    async def get_by_id(self, boss_id: UUID) -> MiniBoss | None:
-        return self._storage.get(boss_id)
+    async def get_by_id(self, boss_id: UUID, tenant_id: str | None = None) -> MiniBoss | None:
+        boss = self._storage.get(boss_id)
+        if boss and tenant_id and boss.tenant_id != tenant_id:
+            return None
+        return boss
 
-    async def get_by_external_id(self, external_id: str) -> MiniBoss | None:
+    async def get_by_external_id(self, external_id: str, tenant_id: str | None = None) -> MiniBoss | None:
         for b in self._storage.values():
             if b.external_id == external_id:
-                return b
+                if tenant_id is None or b.tenant_id == tenant_id:
+                    return b
         return None
 
     async def save(self, boss: MiniBoss) -> MiniBoss:
         self._storage[boss.id] = boss
         return boss
 
-    async def list_active_by_guild(self, guild_id: UUID) -> List[MiniBoss]:
-        return [b for b in self._storage.values() if b.guild_id == guild_id and not b.is_defeated]
+    async def list_active_by_guild(self, guild_id: UUID, tenant_id: str | None = None) -> List[MiniBoss]:
+        return [
+            b
+            for b in self._storage.values()
+            if b.guild_id == guild_id
+            and not b.is_defeated
+            and (tenant_id is None or b.tenant_id == tenant_id)
+        ]
 
-    async def list_all(self) -> List[MiniBoss]:
+    async def list_all(self, tenant_id: str | None = None) -> List[MiniBoss]:
+        if tenant_id:
+            return [b for b in self._storage.values() if b.tenant_id == tenant_id]
         return list(self._storage.values())
 
 
@@ -56,16 +68,21 @@ class PostgresMiniBossRepository(MiniBossRepository):
             bounty_hero_xp=model.bounty_hero_xp,
             bounty_guild_xp=model.bounty_guild_xp,
             bounty_gold=model.bounty_gold,
+            tenant_id=getattr(model, "tenant_id", "default") or "default",
         )
 
-    async def get_by_id(self, boss_id: UUID) -> MiniBoss | None:
+    async def get_by_id(self, boss_id: UUID, tenant_id: str | None = None) -> MiniBoss | None:
         stmt = select(MiniBossModel).where(MiniBossModel.id == boss_id)
+        if tenant_id:
+            stmt = stmt.where(MiniBossModel.tenant_id == tenant_id)
         result = await self.session.execute(stmt)
         model = result.scalar_one_or_none()
         return self._to_domain(model) if model else None
 
-    async def get_by_external_id(self, external_id: str) -> MiniBoss | None:
+    async def get_by_external_id(self, external_id: str, tenant_id: str | None = None) -> MiniBoss | None:
         stmt = select(MiniBossModel).where(MiniBossModel.external_id == external_id)
+        if tenant_id:
+            stmt = stmt.where(MiniBossModel.tenant_id == tenant_id)
         result = await self.session.execute(stmt)
         model = result.scalar_one_or_none()
         return self._to_domain(model) if model else None
@@ -76,6 +93,7 @@ class PostgresMiniBossRepository(MiniBossRepository):
         model = result.scalar_one_or_none()
 
         sev_val = boss.severity.value if hasattr(boss.severity, "value") else str(boss.severity)
+        tenant_id = getattr(boss, "tenant_id", "default") or "default"
 
         if model is None:
             model = MiniBossModel(
@@ -90,6 +108,7 @@ class PostgresMiniBossRepository(MiniBossRepository):
                 bounty_hero_xp=boss.bounty_hero_xp,
                 bounty_guild_xp=boss.bounty_guild_xp,
                 bounty_gold=boss.bounty_gold,
+                tenant_id=tenant_id,
             )
             self.session.add(model)
         else:
@@ -102,21 +121,26 @@ class PostgresMiniBossRepository(MiniBossRepository):
             model.bounty_hero_xp = boss.bounty_hero_xp
             model.bounty_guild_xp = boss.bounty_guild_xp
             model.bounty_gold = boss.bounty_gold
+            model.tenant_id = tenant_id
 
         await self.session.flush()
         return self._to_domain(model)
 
-    async def list_active_by_guild(self, guild_id: UUID) -> List[MiniBoss]:
+    async def list_active_by_guild(self, guild_id: UUID, tenant_id: str | None = None) -> List[MiniBoss]:
         stmt = select(MiniBossModel).where(
             MiniBossModel.guild_id == guild_id,
             MiniBossModel.is_defeated == False,
         )
+        if tenant_id:
+            stmt = stmt.where(MiniBossModel.tenant_id == tenant_id)
         result = await self.session.execute(stmt)
         models = result.scalars().all()
         return [self._to_domain(m) for m in models]
 
-    async def list_all(self) -> List[MiniBoss]:
+    async def list_all(self, tenant_id: str | None = None) -> List[MiniBoss]:
         stmt = select(MiniBossModel)
+        if tenant_id:
+            stmt = stmt.where(MiniBossModel.tenant_id == tenant_id)
         result = await self.session.execute(stmt)
         models = result.scalars().all()
         return [self._to_domain(m) for m in models]

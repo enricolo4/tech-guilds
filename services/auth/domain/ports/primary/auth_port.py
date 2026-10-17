@@ -12,6 +12,8 @@ class RegisterAccountCommand:
     name: str
     password: str | None = None
     avatar_url: str | None = None
+    tenant_id: str | None = None
+    organization_name: str | None = None
 
 
 @dataclass(frozen=True)
@@ -19,6 +21,7 @@ class LoginDirectCommand:
     """Comando de entrada para login direto com e-mail corporativo."""
     email: str
     password: str | None = None
+    tenant_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -26,6 +29,7 @@ class LoginSSOCommand:
     """Comando de entrada para autenticação via provedor SSO."""
     token: str
     provider: str
+    tenant_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -34,6 +38,7 @@ class LoginSSOResult:
     auth_token: AuthToken
     user: UserClaims
     session_id: str
+    tenant_id: str = "default"
 
 
 @dataclass(frozen=True)

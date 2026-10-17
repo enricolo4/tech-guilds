@@ -8,12 +8,12 @@ class HeroRepository(ABC):
     """Porta Secundária (Driven Port) para persistência de Heróis."""
 
     @abstractmethod
-    async def get_by_id(self, hero_id: UUID) -> Hero | None:
+    async def get_by_id(self, hero_id: UUID, tenant_id: str | None = None) -> Hero | None:
         """Recupera um herói pelo seu UUID único."""
         pass
 
     @abstractmethod
-    async def get_by_email(self, email: str) -> Hero | None:
+    async def get_by_email(self, email: str, tenant_id: str | None = None) -> Hero | None:
         """Recupera um herói pelo seu endereço de e-mail."""
         pass
 
@@ -28,6 +28,7 @@ class HeroRepository(ABC):
         pass
 
     @abstractmethod
-    async def list_all(self) -> List[Hero]:
+    async def list_all(self, tenant_id: str | None = None) -> List[Hero]:
         """Lista todos os heróis cadastrados."""
         pass
+

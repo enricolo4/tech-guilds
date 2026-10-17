@@ -15,6 +15,7 @@ class ProcessBugEventCommand:
     is_resolved: bool
     resolver_email: str | None = None
     resolver_hero_id: UUID | None = None
+    tenant_id: str = "default"
 
 
 @dataclass

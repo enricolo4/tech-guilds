@@ -1,5 +1,6 @@
 from typing import Dict
 import httpx
+from services.common.tenant import resolve_tenant_id
 from services.registration.domain.model.user_claims import UserClaims
 from services.registration.domain.ports.secondary.sso_port import SSOIdentityPort
 
@@ -37,12 +38,14 @@ class MultiProviderSSOAdapter(SSOIdentityPort):
                 email = payload.get("email") or payload.get("sub", "")
                 name = payload.get("name") or (email.split("@")[0].capitalize() if email else "Hero Dev")
                 provider_found = payload.get("provider") or provider_normalized
+                tenant_id = resolve_tenant_id(email=email, explicit_tenant_id=payload.get("tenant_id"))
                 return UserClaims(
                     email=email,
                     name=name,
                     avatar_url=payload.get("avatar_url") or f"https://api.dicebear.com/7.x/adventurer/svg?seed={name}",
                     provider=provider_found,
                     provider_user_id=payload.get("sub", ""),
+                    tenant_id=tenant_id,
                 )
             except Exception:
                 pass
@@ -63,6 +66,7 @@ class MultiProviderSSOAdapter(SSOIdentityPort):
                 avatar_url=f"https://api.dicebear.com/7.x/adventurer/svg?seed={name_part}",
                 provider=provider_normalized,
                 provider_user_id=f"dev_{provider_normalized}_{clean_token}",
+                tenant_id=resolve_tenant_id(email=email),
             )
 
         if provider_normalized == "google":

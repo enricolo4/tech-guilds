@@ -10,6 +10,7 @@ class GuildMember:
     name: str
     email: str
     hero_class: str
+    tenant_id: str = "default"
     guild_id: UUID | None = None
     level: int = 1
     avatar_url: str | None = None

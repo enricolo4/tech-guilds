@@ -12,6 +12,7 @@ class TokenPayload:
     name: str
     provider: str
     session_id: str
+    tenant_id: str = "default"
     roles: List[str] = field(default_factory=list)
     exp: int | None = None
     iat: int | None = None
@@ -36,6 +37,7 @@ class Session:
     provider_user_id: str
     created_at: datetime
     expires_at: datetime
+    tenant_id: str = "default"
     token: str | None = None
     is_revoked: bool = False
 

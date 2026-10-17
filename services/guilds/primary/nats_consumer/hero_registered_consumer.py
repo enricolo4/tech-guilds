@@ -54,6 +54,7 @@ class HeroRegisteredConsumer:
                 name=event.name,
                 email=event.email,
                 hero_class=event.hero_class,
+                tenant_id=event.tenant_id,
                 avatar_url=event.avatar_url,
                 level=event.level,
                 occurred_at=event.occurred_at,

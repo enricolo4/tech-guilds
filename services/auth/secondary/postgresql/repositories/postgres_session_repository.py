@@ -21,6 +21,7 @@ class PostgresSessionRepository(SessionRepository):
                     existing.token = session.token
                     existing.expires_at = session.expires_at
                     existing.is_revoked = session.is_revoked
+                    existing.tenant_id = session.tenant_id or "default"
                     await db.flush()
                     return existing.to_domain()
                 else:
@@ -54,13 +55,13 @@ class PostgresSessionRepository(SessionRepository):
             models = result.scalars().all()
             return [m.to_domain() for m in models]
 
-    async def find_by_email(self, email: str) -> Session | None:
+    async def find_by_email(self, email: str, tenant_id: str | None = None) -> Session | None:
         async with self._session_factory() as db:
-            result = await db.execute(
-                select(SessionModel)
-                .where(SessionModel.email == email)
-                .order_by(SessionModel.created_at.desc())
-            )
+            stmt = select(SessionModel).where(SessionModel.email == email)
+            if tenant_id:
+                stmt = stmt.where(SessionModel.tenant_id == tenant_id)
+            stmt = stmt.order_by(SessionModel.created_at.desc())
+            result = await db.execute(stmt)
             model = result.scalars().first()
             return model.to_domain() if model else None
 
@@ -85,7 +86,12 @@ class InMemorySessionRepository(SessionRepository):
     async def find_by_user_id(self, user_id: str) -> List[Session]:
         return [s for s in self._sessions.values() if s.user_id == user_id]
 
-    async def find_by_email(self, email: str) -> Session | None:
-        matches = [s for s in self._sessions.values() if s.email == email]
+    async def find_by_email(self, email: str, tenant_id: str | None = None) -> Session | None:
+        matches = [
+            s
+            for s in self._sessions.values()
+            if s.email == email and (tenant_id is None or s.tenant_id == tenant_id)
+        ]
         return matches[-1] if matches else None
+
 

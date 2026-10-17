@@ -15,6 +15,7 @@ class SyncHeroProgressionCommand:
     experience: int = 0
     gold: int = 0
     guild_id: UUID | None = None
+    tenant_id: str = "default"
 
 
 @dataclass

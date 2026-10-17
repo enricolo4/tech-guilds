@@ -24,13 +24,16 @@ class CreateGuildUseCase(CreateGuildPort):
         if not stripped_name:
             raise ValueError("O nome da guilda não pode ser vazio.")
 
-        existing = await self.guild_repository.find_by_name(stripped_name)
+        tenant_id = (cmd.tenant_id or "default").strip() or "default"
+
+        existing = await self.guild_repository.find_by_name(stripped_name, tenant_id=tenant_id)
         if existing:
-            raise ValueError(f"Já existe uma guilda com o nome '{stripped_name}'.")
+            raise ValueError(f"Já existe uma guilda com o nome '{stripped_name}' nesta organização.")
 
         guild = Guild(
             name=stripped_name,
             description=cmd.description.strip(),
+            tenant_id=tenant_id,
             squad_level=SquadLevel(level=1, experience=0),
             treasury=Treasury(gold=0),
         )
@@ -51,3 +54,4 @@ class CreateGuildUseCase(CreateGuildPort):
             success=True,
             message=f"Guilda '{saved_guild.name}' criada com sucesso.",
         )
+

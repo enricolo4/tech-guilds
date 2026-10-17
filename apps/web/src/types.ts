@@ -40,6 +40,7 @@ export interface Guild {
   active_members_count: number;
   active_adventure_title?: string;
   active_boss_count: number;
+  tenant_id?: string;
 }
 
 export interface MiniBoss {
@@ -117,6 +118,8 @@ export interface UserClaims {
   provider: string;
   provider_user_id: string;
   avatar_url?: string;
+  tenant_id?: string;
+  organization_name?: string;
 }
 
 export interface AuthSession {
@@ -124,5 +127,6 @@ export interface AuthSession {
   token_type: string;
   expires_in: number;
   session_id: string;
+  tenant_id?: string;
   user: UserClaims;
 }

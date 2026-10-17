@@ -14,17 +14,21 @@ class PostgresHeroRepository(HeroRepository):
     def __init__(self, session: AsyncSession):
         self._session = session
 
-    async def get_by_id(self, hero_id: UUID) -> Hero | None:
+    async def get_by_id(self, hero_id: UUID, tenant_id: str | None = None) -> Hero | None:
         stmt = select(HeroModel).where(HeroModel.id == hero_id)
+        if tenant_id:
+            stmt = stmt.where(HeroModel.tenant_id == tenant_id)
         result = await self._session.execute(stmt)
         model = result.scalar_one_or_none()
         return model.to_domain() if model else None
 
-    async def get_by_email(self, email: str) -> Hero | None:
+    async def get_by_email(self, email: str, tenant_id: str | None = None) -> Hero | None:
         clean_email = email.strip().lower()
         stmt = select(HeroModel).where(HeroModel.email == clean_email)
+        if tenant_id:
+            stmt = stmt.where(HeroModel.tenant_id == tenant_id)
         result = await self._session.execute(stmt)
-        model = result.scalar_one_or_none()
+        model = result.scalars().first()
         return model.to_domain() if model else None
 
     async def save(self, hero: Hero) -> Hero:
@@ -41,6 +45,7 @@ class PostgresHeroRepository(HeroRepository):
             raise ValueError(f"Herói com ID {hero.id} não encontrado para atualização.")
 
         model.name = hero.name
+        model.tenant_id = hero.tenant_id or "default"
         model.avatar_url = hero.avatar_url
         model.hero_class = hero.hero_class.value if hasattr(hero.hero_class, "value") else str(hero.hero_class)
         model.level = hero.level
@@ -59,8 +64,10 @@ class PostgresHeroRepository(HeroRepository):
         await self._session.flush()
         return model.to_domain()
 
-    async def list_all(self) -> List[Hero]:
+    async def list_all(self, tenant_id: str | None = None) -> List[Hero]:
         stmt = select(HeroModel)
+        if tenant_id:
+            stmt = stmt.where(HeroModel.tenant_id == tenant_id)
         result = await self._session.execute(stmt)
         return [m.to_domain() for m in result.scalars().all()]
 
@@ -74,14 +81,18 @@ class InMemoryHeroRepository(HeroRepository):
             for hero in initial_heroes:
                 self._storage[hero.id] = hero
 
-    async def get_by_id(self, hero_id: UUID) -> Hero | None:
-        return self._storage.get(hero_id)
+    async def get_by_id(self, hero_id: UUID, tenant_id: str | None = None) -> Hero | None:
+        hero = self._storage.get(hero_id)
+        if hero and tenant_id and hero.tenant_id != tenant_id:
+            return None
+        return hero
 
-    async def get_by_email(self, email: str) -> Hero | None:
+    async def get_by_email(self, email: str, tenant_id: str | None = None) -> Hero | None:
         clean_email = email.strip().lower()
         for hero in self._storage.values():
             if hero.email.strip().lower() == clean_email:
-                return hero
+                if tenant_id is None or hero.tenant_id == tenant_id:
+                    return hero
         return None
 
     async def save(self, hero: Hero) -> Hero:
@@ -94,5 +105,8 @@ class InMemoryHeroRepository(HeroRepository):
         self._storage[hero.id] = hero
         return hero
 
-    async def list_all(self) -> List[Hero]:
+    async def list_all(self, tenant_id: str | None = None) -> List[Hero]:
+        if tenant_id:
+            return [h for h in self._storage.values() if h.tenant_id == tenant_id]
         return list(self._storage.values())
+

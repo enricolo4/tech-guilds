@@ -19,6 +19,7 @@ def _map_guild_model_to_domain(model: GuildModel) -> Guild:
         id=model.id,
         name=model.name,
         description=model.description or "",
+        tenant_id=model.tenant_id or "default",
         squad_level=SquadLevel(level=model.level, experience=model.experience),
         treasury=Treasury(gold=model.treasury_gold),
         member_ids=member_ids,
@@ -33,6 +34,7 @@ def _map_member_model_to_domain(model: GuildMemberModel) -> GuildMember:
         name=model.name,
         email=model.email,
         hero_class=model.hero_class,
+        tenant_id=model.tenant_id or "default",
         guild_id=model.guild_id,
         level=model.level,
         avatar_url=model.avatar_url,
@@ -59,6 +61,7 @@ class PostgresGuildRepository(GuildRepository):
         if model is None:
             model = GuildModel(
                 id=guild.id,
+                tenant_id=guild.tenant_id or "default",
                 name=guild.name,
                 description=guild.description,
                 level=guild.level,
@@ -69,6 +72,7 @@ class PostgresGuildRepository(GuildRepository):
             )
             self.session.add(model)
         else:
+            model.tenant_id = guild.tenant_id or "default"
             model.name = guild.name
             model.description = guild.description
             model.level = guild.level
@@ -80,37 +84,41 @@ class PostgresGuildRepository(GuildRepository):
         await self.session.refresh(model, ["members"])
         return _map_guild_model_to_domain(model)
 
-    async def find_by_id(self, guild_id: UUID) -> Guild | None:
+    async def find_by_id(self, guild_id: UUID, tenant_id: str | None = None) -> Guild | None:
         stmt = (
             select(GuildModel)
             .where(GuildModel.id == guild_id)
             .options(selectinload(GuildModel.members))
         )
+        if tenant_id:
+            stmt = stmt.where(GuildModel.tenant_id == tenant_id)
         result = await self.session.execute(stmt)
         model = result.scalar_one_or_none()
         return _map_guild_model_to_domain(model) if model else None
 
-    async def get_by_id(self, guild_id: UUID) -> Guild | None:
-        return await self.find_by_id(guild_id)
+    async def get_by_id(self, guild_id: UUID, tenant_id: str | None = None) -> Guild | None:
+        return await self.find_by_id(guild_id, tenant_id=tenant_id)
 
-    async def find_by_name(self, name: str) -> Guild | None:
+    async def find_by_name(self, name: str, tenant_id: str | None = None) -> Guild | None:
         stmt = (
             select(GuildModel)
             .where(GuildModel.name == name)
             .options(selectinload(GuildModel.members))
         )
+        if tenant_id:
+            stmt = stmt.where(GuildModel.tenant_id == tenant_id)
         result = await self.session.execute(stmt)
-        model = result.scalar_one_or_none()
+        model = result.scalars().first()
         return _map_guild_model_to_domain(model) if model else None
 
-    async def list_all(self, limit: int = 100, offset: int = 0) -> List[Guild]:
+    async def list_all(self, limit: int = 100, offset: int = 0, tenant_id: str | None = None) -> List[Guild]:
         stmt = (
             select(GuildModel)
             .options(selectinload(GuildModel.members))
-            .order_by(GuildModel.name)
-            .limit(limit)
-            .offset(offset)
         )
+        if tenant_id:
+            stmt = stmt.where(GuildModel.tenant_id == tenant_id)
+        stmt = stmt.order_by(GuildModel.name).limit(limit).offset(offset)
         result = await self.session.execute(stmt)
         models = result.scalars().all()
         return [_map_guild_model_to_domain(m) for m in models]
@@ -136,6 +144,7 @@ class PostgresGuildMemberRepository(GuildMemberRepository):
         if model is None:
             model = GuildMemberModel(
                 hero_id=member.hero_id,
+                tenant_id=member.tenant_id or "default",
                 name=member.name,
                 email=member.email,
                 hero_class=member.hero_class,
@@ -147,6 +156,7 @@ class PostgresGuildMemberRepository(GuildMemberRepository):
             )
             self.session.add(model)
         else:
+            model.tenant_id = member.tenant_id or "default"
             model.name = member.name
             model.email = member.email
             model.hero_class = member.hero_class
@@ -166,7 +176,7 @@ class PostgresGuildMemberRepository(GuildMemberRepository):
         if not model:
             try:
                 from sqlalchemy import text
-                hero_stmt = text("SELECT name, email, hero_class, avatar_url FROM registration.heroes WHERE id = :hid")
+                hero_stmt = text("SELECT name, email, hero_class, avatar_url, tenant_id FROM registration.heroes WHERE id = :hid")
                 res = await self.session.execute(hero_stmt, {"hid": hero_id})
                 row = res.first()
                 if row:
@@ -176,6 +186,7 @@ class PostgresGuildMemberRepository(GuildMemberRepository):
                         email=row[1],
                         hero_class=row[2] or "NOVICE",
                         avatar_url=row[3],
+                        tenant_id=row[4] or "default",
                         level=1,
                         guild_id=None,
                     )
@@ -208,9 +219,10 @@ class PostgresGuildMemberRepository(GuildMemberRepository):
             email = f"hero-{str(hero_id)[:8]}@guild.local"
             hero_class = "WARRIOR"
             avatar_url = None
+            tenant_id = "default"
             try:
                 from sqlalchemy import text
-                hero_stmt = text("SELECT name, email, hero_class, avatar_url FROM registration.heroes WHERE id = :hid")
+                hero_stmt = text("SELECT name, email, hero_class, avatar_url, tenant_id FROM registration.heroes WHERE id = :hid")
                 res = await self.session.execute(hero_stmt, {"hid": hero_id})
                 row = res.first()
                 if row:
@@ -218,11 +230,13 @@ class PostgresGuildMemberRepository(GuildMemberRepository):
                     email = row[1] or email
                     hero_class = row[2] or hero_class
                     avatar_url = row[3]
+                    tenant_id = row[4] or "default"
             except Exception:
                 pass
 
             model = GuildMemberModel(
                 hero_id=hero_id,
+                tenant_id=tenant_id,
                 name=name,
                 email=email,
                 hero_class=hero_class,
@@ -237,8 +251,11 @@ class PostgresGuildMemberRepository(GuildMemberRepository):
         await self.session.refresh(model)
         return _map_member_model_to_domain(model)
 
-    async def list_all(self, limit: int = 100, offset: int = 0) -> List[GuildMember]:
-        stmt = select(GuildMemberModel).order_by(GuildMemberModel.name).limit(limit).offset(offset)
+    async def list_all(self, limit: int = 100, offset: int = 0, tenant_id: str | None = None) -> List[GuildMember]:
+        stmt = select(GuildMemberModel)
+        if tenant_id:
+            stmt = stmt.where(GuildMemberModel.tenant_id == tenant_id)
+        stmt = stmt.order_by(GuildMemberModel.name).limit(limit).offset(offset)
         result = await self.session.execute(stmt)
         models = result.scalars().all()
         return [_map_member_model_to_domain(m) for m in models]
@@ -254,20 +271,27 @@ class InMemoryGuildRepository(GuildRepository):
         self._guilds[guild.id] = guild
         return guild
 
-    async def find_by_id(self, guild_id: UUID) -> Guild | None:
-        return self._guilds.get(guild_id)
+    async def find_by_id(self, guild_id: UUID, tenant_id: str | None = None) -> Guild | None:
+        g = self._guilds.get(guild_id)
+        if g and tenant_id and g.tenant_id != tenant_id:
+            return None
+        return g
 
-    async def get_by_id(self, guild_id: UUID) -> Guild | None:
-        return await self.find_by_id(guild_id)
+    async def get_by_id(self, guild_id: UUID, tenant_id: str | None = None) -> Guild | None:
+        return await self.find_by_id(guild_id, tenant_id=tenant_id)
 
-    async def find_by_name(self, name: str) -> Guild | None:
+    async def find_by_name(self, name: str, tenant_id: str | None = None) -> Guild | None:
         for g in self._guilds.values():
             if g.name.lower() == name.lower():
-                return g
+                if tenant_id is None or g.tenant_id == tenant_id:
+                    return g
         return None
 
-    async def list_all(self, limit: int = 100, offset: int = 0) -> List[Guild]:
-        items = list(self._guilds.values())
+    async def list_all(self, limit: int = 100, offset: int = 0, tenant_id: str | None = None) -> List[Guild]:
+        items = [
+            g for g in self._guilds.values()
+            if tenant_id is None or g.tenant_id == tenant_id
+        ]
         return items[offset : offset + limit]
 
     async def delete(self, guild_id: UUID) -> bool:
@@ -300,6 +324,10 @@ class InMemoryGuildMemberRepository(GuildMemberRepository):
             return member
         return None
 
-    async def list_all(self, limit: int = 100, offset: int = 0) -> List[GuildMember]:
-        items = list(self._members.values())
+    async def list_all(self, limit: int = 100, offset: int = 0, tenant_id: str | None = None) -> List[GuildMember]:
+        items = [
+            m for m in self._members.values()
+            if tenant_id is None or m.tenant_id == tenant_id
+        ]
         return items[offset : offset + limit]
+

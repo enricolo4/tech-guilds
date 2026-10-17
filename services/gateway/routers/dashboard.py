@@ -100,7 +100,8 @@ def _get_demo_payload() -> Dict[str, Any]:
             "treasury_gold": 1480,
             "active_members_count": 4,
             "active_adventure_title": "Project Chronos: Multi-Cloud SSO Migration",
-            "active_boss_count": 1
+            "active_boss_count": 1,
+            "tenant_id": "default"
         },
         "heroes": [
             {
@@ -462,6 +463,8 @@ async def get_dashboard_data(
             detail="Guilda não encontrada."
         )
 
+    guild_tenant = getattr(guild, "tenant_id", "default") or "default"
+
     # Membros da guilda
     members = await guilds_container.member_repository.find_by_guild_id(guild.id)
     heroes_data = []
@@ -477,9 +480,10 @@ async def get_dashboard_data(
                         email=m.email,
                         hero_class=m.hero_class,
                         level=m.level,
+                        tenant_id=guild_tenant,
                     )
                 )
-                hero_prog = sync_res.hero
+                hero_prog = sync_res.hero_progression
             except Exception:
                 hero_prog = None
 
@@ -536,6 +540,7 @@ async def get_dashboard_data(
             bounty_guild_xp=300,
             bounty_gold=180,
             guild_id=guild.id,
+            tenant_id=guild_tenant,
         )
         await gamification_container.boss_repo.save(starter_boss)
         bosses = [starter_boss]
@@ -550,6 +555,7 @@ async def get_dashboard_data(
                 status=QuestStatus.DONE,
                 difficulty=QuestDifficulty.HARD,
                 is_pair_programming=True,
+                tenant_id=guild_tenant,
             ),
             Quest(
                 id=uuid4(),
@@ -560,6 +566,7 @@ async def get_dashboard_data(
                 status=QuestStatus.IN_PROGRESS,
                 difficulty=QuestDifficulty.MEDIUM,
                 is_pair_programming=False,
+                tenant_id=guild_tenant,
             ),
             Quest(
                 id=uuid4(),
@@ -570,6 +577,7 @@ async def get_dashboard_data(
                 status=QuestStatus.TODO,
                 difficulty=QuestDifficulty.MEDIUM,
                 is_pair_programming=True,
+                tenant_id=guild_tenant,
             ),
             Quest(
                 id=uuid4(),
@@ -580,6 +588,7 @@ async def get_dashboard_data(
                 status=QuestStatus.TODO,
                 difficulty=QuestDifficulty.HARD,
                 is_pair_programming=False,
+                tenant_id=guild_tenant,
             ),
         ]
         for q in starter_quests:
@@ -658,6 +667,7 @@ async def get_dashboard_data(
             "active_members_count": len(members),
             "active_adventure_title": active_adventure_data["title"],
             "active_boss_count": len([b for b in bosses if not b.is_defeated]),
+            "tenant_id": guild_tenant,
         },
         "heroes": heroes_data,
         "active_boss": active_boss_data,

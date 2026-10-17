@@ -30,6 +30,7 @@ class JoseJWTService(TokenServicePort):
             "name": payload.name,
             "provider": payload.provider,
             "session_id": payload.session_id,
+            "tenant_id": payload.tenant_id,
             "roles": payload.roles,
             "exp": exp,
             "iat": iat,
@@ -45,9 +46,11 @@ class JoseJWTService(TokenServicePort):
                 name=claims["name"],
                 provider=claims["provider"],
                 session_id=claims["session_id"],
+                tenant_id=claims.get("tenant_id", "default"),
                 roles=claims.get("roles", []),
                 exp=claims.get("exp"),
                 iat=claims.get("iat"),
             )
         except JWTError as e:
             raise ValueError(f"Assinatura do JWT inválida ou expirada: {str(e)}") from e
+

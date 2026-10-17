@@ -20,6 +20,7 @@ class SessionModel(Base):
     email: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     provider: Mapped[str] = mapped_column(String(64), nullable=False)
     provider_user_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    tenant_id: Mapped[str] = mapped_column(String(128), nullable=False, default="default", server_default="default", index=True)
     token: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -36,6 +37,7 @@ class SessionModel(Base):
             email=self.email,
             provider=self.provider,
             provider_user_id=self.provider_user_id,
+            tenant_id=self.tenant_id or "default",
             created_at=self.created_at,
             expires_at=self.expires_at,
             token=self.token,
@@ -50,8 +52,10 @@ class SessionModel(Base):
             email=session.email,
             provider=session.provider,
             provider_user_id=session.provider_user_id,
+            tenant_id=session.tenant_id or "default",
             created_at=session.created_at,
             expires_at=session.expires_at,
             token=session.token,
             is_revoked=session.is_revoked,
         )
+

@@ -15,6 +15,7 @@ class HeroRegisteredEvent:
     email: str
     name: str
     hero_class: str
+    tenant_id: str = "default"
     avatar_url: str | None = None
     level: int = 1
     experience: int = 0
@@ -26,6 +27,8 @@ class HeroRegisteredEvent:
             self.occurred_at = datetime.now(timezone.utc).isoformat()
         if isinstance(self.hero_id, str):
             self.hero_id = UUID(self.hero_id)
+        if not self.tenant_id:
+            self.tenant_id = "default"
 
     def to_json(self) -> str:
         data = asdict(self)
@@ -43,6 +46,7 @@ class HeroRegisteredEvent:
             email=raw["email"],
             name=raw["name"],
             hero_class=raw["hero_class"],
+            tenant_id=raw.get("tenant_id") or "default",
             avatar_url=raw.get("avatar_url"),
             level=raw.get("level", 1),
             experience=raw.get("experience", 0),
@@ -53,3 +57,4 @@ class HeroRegisteredEvent:
     @classmethod
     def from_bytes(cls, b: bytes) -> "HeroRegisteredEvent":
         return cls.from_json(b.decode("utf-8"))
+

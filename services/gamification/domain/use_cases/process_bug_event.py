@@ -24,7 +24,8 @@ class ProcessBugEventUseCase(ProcessBugEventPort):
         self.hero_progression_repo = hero_progression_repo
 
     async def execute(self, cmd: ProcessBugEventCommand) -> ProcessBugEventResult:
-        boss = await self.boss_repo.get_by_external_id(cmd.external_id)
+        tenant_id = (cmd.tenant_id or "default").strip() or "default"
+        boss = await self.boss_repo.get_by_external_id(cmd.external_id, tenant_id=tenant_id)
 
         # Se o bug foi aberto e o boss ainda não existe -> Spawna o Mini-Boss
         if boss is None and not cmd.is_resolved:
@@ -33,6 +34,7 @@ class ProcessBugEventUseCase(ProcessBugEventPort):
                 title=cmd.title,
                 guild_id=cmd.guild_id,
                 severity=cmd.severity,
+                tenant_id=tenant_id,
             )
             saved_boss = await self.boss_repo.save(boss)
             return ProcessBugEventResult(mini_boss=saved_boss, is_defeated=False)
@@ -42,12 +44,13 @@ class ProcessBugEventUseCase(ProcessBugEventPort):
             boss.take_damage(boss.current_health)
             saved_boss = await self.boss_repo.save(boss)
 
+            filter_tenant = tenant_id if tenant_id != "default" else None
             hero = None
             hero_leveled_up = False
             if cmd.resolver_hero_id:
-                hero = await self.hero_progression_repo.get_by_id(cmd.resolver_hero_id)
+                hero = await self.hero_progression_repo.get_by_id(cmd.resolver_hero_id, tenant_id=filter_tenant)
             elif cmd.resolver_email:
-                hero = await self.hero_progression_repo.get_by_email(cmd.resolver_email)
+                hero = await self.hero_progression_repo.get_by_email(cmd.resolver_email, tenant_id=filter_tenant)
 
             if hero:
                 hero_leveled_up = hero.gain_experience(boss.bounty_hero_xp)
@@ -67,7 +70,7 @@ class ProcessBugEventUseCase(ProcessBugEventPort):
         if boss is None:
             # Bug já nasceu resolvido
             boss = MiniBoss.spawn_from_bug(
-                cmd.external_id, cmd.title, cmd.guild_id, cmd.severity
+                cmd.external_id, cmd.title, cmd.guild_id, cmd.severity, tenant_id=tenant_id
             )
             boss.is_defeated = True
             saved_boss = await self.boss_repo.save(boss)

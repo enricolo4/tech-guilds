@@ -12,6 +12,7 @@ class RegisterHeroCommand:
     avatar_url: str | None = None
     sso_token: str | None = None
     sso_provider: str | None = None
+    tenant_id: str | None = None
 
 
 @dataclass

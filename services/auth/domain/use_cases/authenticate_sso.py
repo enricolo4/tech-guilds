@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime, timedelta, timezone
 
+from services.common.tenant import resolve_tenant_id, resolve_organization_name
 from services.auth.domain.model.token import AuthToken, Session, TokenPayload
 from services.auth.domain.model.user_claims import UserClaims
 from services.auth.domain.ports.primary.auth_port import (
@@ -16,7 +17,7 @@ from services.auth.domain.ports.secondary.token_service_port import TokenService
 
 
 class AuthenticateSSOUseCase(AuthenticateUserPort):
-    """Caso de uso de autenticação via SSO corporativo.
+    """Caso de uso de autenticação via SSO corporativo e contas diretas multi-tenant.
     Implementa formalmente a porta primária AuthenticateUserPort.
     """
 
@@ -35,7 +36,22 @@ class AuthenticateSSOUseCase(AuthenticateUserPort):
         self._session_ttl_days = session_ttl_days
 
     async def login_sso(self, command: LoginSSOCommand) -> LoginSSOResult:
-        claims = await self._sso_port.verify_token(command.token, command.provider)
+        raw_claims = await self._sso_port.verify_token(command.token, command.provider)
+        tenant_id = resolve_tenant_id(
+            email=raw_claims.email,
+            explicit_tenant_id=command.tenant_id or (raw_claims.tenant_id if raw_claims.tenant_id != "default" else None),
+        )
+        org_name = resolve_organization_name(tenant_id, explicit_name=raw_claims.organization_name)
+
+        claims = UserClaims(
+            email=raw_claims.email,
+            name=raw_claims.name,
+            provider=raw_claims.provider,
+            provider_user_id=raw_claims.provider_user_id,
+            avatar_url=raw_claims.avatar_url,
+            tenant_id=tenant_id,
+            organization_name=org_name,
+        )
 
         now = datetime.now(timezone.utc)
         session_id = str(uuid.uuid4())
@@ -47,6 +63,7 @@ class AuthenticateSSOUseCase(AuthenticateUserPort):
             name=claims.name,
             provider=claims.provider,
             session_id=session_id,
+            tenant_id=tenant_id,
             roles=["player"],
         )
         token_str = self._token_service.issue_token(payload, expires_in_seconds=self._token_ttl_seconds)
@@ -57,6 +74,7 @@ class AuthenticateSSOUseCase(AuthenticateUserPort):
             email=claims.email,
             provider=claims.provider,
             provider_user_id=claims.provider_user_id,
+            tenant_id=tenant_id,
             created_at=now,
             expires_at=session_expires_at,
             token=token_str,
@@ -74,6 +92,7 @@ class AuthenticateSSOUseCase(AuthenticateUserPort):
             auth_token=auth_token,
             user=claims,
             session_id=session_id,
+            tenant_id=tenant_id,
         )
 
     async def register_account(self, command: RegisterAccountCommand) -> LoginSSOResult:
@@ -85,6 +104,13 @@ class AuthenticateSSOUseCase(AuthenticateUserPort):
         if not name:
             raise ValueError("Nome é obrigatório.")
 
+        tenant_id = resolve_tenant_id(
+            email=email,
+            explicit_tenant_id=command.tenant_id,
+            organization_name=command.organization_name,
+        )
+        org_name = resolve_organization_name(tenant_id, explicit_name=command.organization_name)
+
         user_id = str(uuid.uuid4())
         claims = UserClaims(
             email=email,
@@ -92,6 +118,8 @@ class AuthenticateSSOUseCase(AuthenticateUserPort):
             provider="direct",
             provider_user_id=user_id,
             avatar_url=command.avatar_url or f"https://api.dicebear.com/7.x/adventurer/svg?seed={name}",
+            tenant_id=tenant_id,
+            organization_name=org_name,
         )
 
         now = datetime.now(timezone.utc)
@@ -104,6 +132,7 @@ class AuthenticateSSOUseCase(AuthenticateUserPort):
             name=name,
             provider="direct",
             session_id=session_id,
+            tenant_id=tenant_id,
             roles=["player"],
         )
         token_str = self._token_service.issue_token(payload, expires_in_seconds=self._token_ttl_seconds)
@@ -114,6 +143,7 @@ class AuthenticateSSOUseCase(AuthenticateUserPort):
             email=email,
             provider="direct",
             provider_user_id=user_id,
+            tenant_id=tenant_id,
             created_at=now,
             expires_at=session_expires_at,
             token=token_str,
@@ -129,6 +159,7 @@ class AuthenticateSSOUseCase(AuthenticateUserPort):
             ),
             user=claims,
             session_id=session_id,
+            tenant_id=tenant_id,
         )
 
     async def login_direct(self, command: LoginDirectCommand) -> LoginSSOResult:
@@ -137,9 +168,15 @@ class AuthenticateSSOUseCase(AuthenticateUserPort):
         if not email or "@" not in email:
             raise ValueError("E-mail corporativo inválido.")
 
-        existing_session = await self._session_repo.find_by_email(email)
+        existing_session = await self._session_repo.find_by_email(email, tenant_id=command.tenant_id)
         name = email.split("@")[0].capitalize()
         user_id = existing_session.user_id if existing_session else str(uuid.uuid4())
+        tenant_id = (
+            command.tenant_id
+            or (existing_session.tenant_id if existing_session and existing_session.tenant_id != "default" else None)
+            or resolve_tenant_id(email=email)
+        )
+        org_name = resolve_organization_name(tenant_id)
 
         now = datetime.now(timezone.utc)
         session_id = str(uuid.uuid4())
@@ -151,6 +188,8 @@ class AuthenticateSSOUseCase(AuthenticateUserPort):
             provider="direct",
             provider_user_id=user_id,
             avatar_url=f"https://api.dicebear.com/7.x/adventurer/svg?seed={name}",
+            tenant_id=tenant_id,
+            organization_name=org_name,
         )
 
         payload = TokenPayload(
@@ -159,6 +198,7 @@ class AuthenticateSSOUseCase(AuthenticateUserPort):
             name=name,
             provider="direct",
             session_id=session_id,
+            tenant_id=tenant_id,
             roles=["player"],
         )
         token_str = self._token_service.issue_token(payload, expires_in_seconds=self._token_ttl_seconds)
@@ -169,6 +209,7 @@ class AuthenticateSSOUseCase(AuthenticateUserPort):
             email=email,
             provider="direct",
             provider_user_id=user_id,
+            tenant_id=tenant_id,
             created_at=now,
             expires_at=session_expires_at,
             token=token_str,
@@ -184,4 +225,6 @@ class AuthenticateSSOUseCase(AuthenticateUserPort):
             ),
             user=claims,
             session_id=session_id,
+            tenant_id=tenant_id,
         )
+

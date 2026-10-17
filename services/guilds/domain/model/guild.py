@@ -52,6 +52,7 @@ class Guild:
     id: UUID = field(default_factory=uuid4)
     name: str = ""
     description: str = ""
+    tenant_id: str = "default"
     squad_level: SquadLevel = field(default_factory=SquadLevel)
     treasury: Treasury = field(default_factory=Treasury)
     member_ids: List[UUID] = field(default_factory=list)

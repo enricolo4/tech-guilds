@@ -5,16 +5,20 @@ from sqlalchemy import (
     String,
     Boolean,
     DateTime,
+    UniqueConstraint,
 )
 from services.gamification.secondary.postgresql.database import Base, GUID
 
 
 class QuestModel(Base):
     __tablename__ = "quests"
-    __table_args__ = {"schema": "gamification"}
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "external_id", name="uq_gamification_quests_tenant_external_id"),
+        {"schema": "gamification"},
+    )
 
     id = Column(GUID, primary_key=True, default=uuid.uuid4)
-    external_id = Column(String(100), unique=True, nullable=False, index=True)
+    external_id = Column(String(100), nullable=False, index=True)
     external_source = Column(String(50), default="linear", nullable=False)
     title = Column(String(255), nullable=False)
     guild_id = Column(GUID, nullable=False, index=True)
@@ -24,6 +28,7 @@ class QuestModel(Base):
     status = Column(String(50), default="TODO", nullable=False)
     difficulty = Column(String(50), default="MEDIUM", nullable=False)
     is_pair_programming = Column(Boolean, default=False, nullable=False)
+    tenant_id = Column(String(120), default="default", nullable=False, index=True)
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at = Column(

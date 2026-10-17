@@ -9,11 +9,11 @@ class QuestRepository(ABC):
     """Porta Secundária (Driven/Output Port) para persistência de Quests."""
 
     @abstractmethod
-    async def get_by_id(self, quest_id: UUID) -> Quest | None:
+    async def get_by_id(self, quest_id: UUID, tenant_id: str | None = None) -> Quest | None:
         pass
 
     @abstractmethod
-    async def get_by_external_id(self, external_id: str) -> Quest | None:
+    async def get_by_external_id(self, external_id: str, tenant_id: str | None = None) -> Quest | None:
         pass
 
     @abstractmethod
@@ -21,9 +21,9 @@ class QuestRepository(ABC):
         pass
 
     @abstractmethod
-    async def list_by_guild(self, guild_id: UUID) -> List[Quest]:
+    async def list_by_guild(self, guild_id: UUID, tenant_id: str | None = None) -> List[Quest]:
         pass
 
     @abstractmethod
-    async def list_all(self) -> List[Quest]:
+    async def list_all(self, tenant_id: str | None = None) -> List[Quest]:
         pass

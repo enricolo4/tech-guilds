@@ -19,23 +19,33 @@ class InMemoryHeroProgressionRepository(HeroProgressionRepository):
     def __init__(self):
         self._storage: dict[UUID, HeroProgression] = {}
 
-    async def get_by_id(self, hero_id: UUID) -> HeroProgression | None:
-        return self._storage.get(hero_id)
+    async def get_by_id(self, hero_id: UUID, tenant_id: str | None = None) -> HeroProgression | None:
+        hero = self._storage.get(hero_id)
+        if hero and tenant_id and hero.tenant_id != tenant_id:
+            return None
+        return hero
 
-    async def get_by_email(self, email: str) -> HeroProgression | None:
+    async def get_by_email(self, email: str, tenant_id: str | None = None) -> HeroProgression | None:
         for h in self._storage.values():
             if h.email and h.email.lower() == email.lower():
-                return h
+                if tenant_id is None or h.tenant_id == tenant_id:
+                    return h
         return None
 
     async def save(self, hero: HeroProgression) -> HeroProgression:
         self._storage[hero.hero_id] = hero
         return hero
 
-    async def list_by_guild(self, guild_id: UUID) -> List[HeroProgression]:
-        return [h for h in self._storage.values() if h.guild_id == guild_id]
+    async def list_by_guild(self, guild_id: UUID, tenant_id: str | None = None) -> List[HeroProgression]:
+        return [
+            h
+            for h in self._storage.values()
+            if h.guild_id == guild_id and (tenant_id is None or h.tenant_id == tenant_id)
+        ]
 
-    async def list_all(self) -> List[HeroProgression]:
+    async def list_all(self, tenant_id: str | None = None) -> List[HeroProgression]:
+        if tenant_id:
+            return [h for h in self._storage.values() if h.tenant_id == tenant_id]
         return list(self._storage.values())
 
 
@@ -62,16 +72,21 @@ class PostgresHeroProgressionRepository(HeroProgressionRepository):
             active_buffs=dict(model.active_buffs or {}),
             skill_cooldowns=dict(model.skill_cooldowns or {}),
             guild_id=model.guild_id,
+            tenant_id=getattr(model, "tenant_id", "default") or "default",
         )
 
-    async def get_by_id(self, hero_id: UUID) -> HeroProgression | None:
+    async def get_by_id(self, hero_id: UUID, tenant_id: str | None = None) -> HeroProgression | None:
         stmt = select(HeroProgressionModel).where(HeroProgressionModel.hero_id == hero_id)
+        if tenant_id:
+            stmt = stmt.where(HeroProgressionModel.tenant_id == tenant_id)
         result = await self.session.execute(stmt)
         model = result.scalar_one_or_none()
         return self._to_domain(model) if model else None
 
-    async def get_by_email(self, email: str) -> HeroProgression | None:
+    async def get_by_email(self, email: str, tenant_id: str | None = None) -> HeroProgression | None:
         stmt = select(HeroProgressionModel).where(HeroProgressionModel.email == email)
+        if tenant_id:
+            stmt = stmt.where(HeroProgressionModel.tenant_id == tenant_id)
         result = await self.session.execute(stmt)
         model = result.scalar_one_or_none()
         return self._to_domain(model) if model else None
@@ -82,6 +97,7 @@ class PostgresHeroProgressionRepository(HeroProgressionRepository):
         model = result.scalar_one_or_none()
 
         stats_dict = hero.stats.to_dict() if hasattr(hero.stats, "to_dict") else dict(hero.stats)
+        tenant_id = getattr(hero, "tenant_id", "default") or "default"
 
         if model is None:
             model = HeroProgressionModel(
@@ -101,6 +117,7 @@ class PostgresHeroProgressionRepository(HeroProgressionRepository):
                 active_buffs=hero.active_buffs,
                 skill_cooldowns=hero.skill_cooldowns,
                 guild_id=hero.guild_id,
+                tenant_id=tenant_id,
             )
             self.session.add(model)
         else:
@@ -119,18 +136,23 @@ class PostgresHeroProgressionRepository(HeroProgressionRepository):
             model.active_buffs = hero.active_buffs
             model.skill_cooldowns = hero.skill_cooldowns
             model.guild_id = hero.guild_id
+            model.tenant_id = tenant_id
 
         await self.session.flush()
         return self._to_domain(model)
 
-    async def list_by_guild(self, guild_id: UUID) -> List[HeroProgression]:
+    async def list_by_guild(self, guild_id: UUID, tenant_id: str | None = None) -> List[HeroProgression]:
         stmt = select(HeroProgressionModel).where(HeroProgressionModel.guild_id == guild_id)
+        if tenant_id:
+            stmt = stmt.where(HeroProgressionModel.tenant_id == tenant_id)
         result = await self.session.execute(stmt)
         models = result.scalars().all()
         return [self._to_domain(m) for m in models]
 
-    async def list_all(self) -> List[HeroProgression]:
+    async def list_all(self, tenant_id: str | None = None) -> List[HeroProgression]:
         stmt = select(HeroProgressionModel)
+        if tenant_id:
+            stmt = stmt.where(HeroProgressionModel.tenant_id == tenant_id)
         result = await self.session.execute(stmt)
         models = result.scalars().all()
         return [self._to_domain(m) for m in models]
